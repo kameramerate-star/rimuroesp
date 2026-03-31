@@ -1,0 +1,483 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+local TOGGLE_KEY_ESP = Enum.KeyCode.U
+local TOGGLE_KEY_OVERLAY = Enum.KeyCode.RightShift
+
+local SHOW_THROUGH_WALLS = true
+local BILLBOARD_OFFSET = Vector3.new(0, 2.7, 0)
+local FONT = Enum.Font.SourceSansBold
+local NAME_TEXT_SIZE = 15
+local BAR_WIDTH = 100
+
+local espVisible = true
+local overlayVisible = true
+
+local tracked = {}
+local overlayList = {}
+local overlayGui = nil
+local debounce = false
+local DEBOUNCE_TIME = 0.3
+
+-- ==================== ESP ====================
+
+local function updateHudForCharacter(trackedInfo, humanoid)
+	if not trackedInfo or not humanoid then return end
+	local pct = math.clamp(humanoid.Health / math.max(1, humanoid.MaxHealth), 0, 1)
+	trackedInfo.healthFill:TweenSize(UDim2.new(pct, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.12, true)
+
+	local col
+	if pct > 0.5 then col = Color3.fromRGB(80, 255, 80)
+	elseif pct > 0.3 then col = Color3.fromRGB(255, 255, 100)
+	else col = Color3.fromRGB(255, 80, 80) end
+	trackedInfo.healthFill.BackgroundColor3 = col
+end
+
+local function createBillboardForCharacter(character, player)
+	if player == LocalPlayer then return nil end
+	if not character or not character.Parent then return nil end
+
+	local head = character:FindFirstChild("Head") or character:FindFirstChild("UpperTorso") or character.PrimaryPart
+	if not head then return nil end
+
+	local existing = head:FindFirstChild("ESP_Billboard")
+	if existing then existing:Destroy() end
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "ESP_Billboard"
+	billboard.Adornee = head
+	billboard.AlwaysOnTop = SHOW_THROUGH_WALLS
+	billboard.Size = UDim2.new(0, BAR_WIDTH, 0, 52)
+	billboard.StudsOffset = BILLBOARD_OFFSET
+	billboard.MaxDistance = 10000000
+	billboard.Enabled = espVisible
+	billboard.Parent = head
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, 0, 1, 0)
+	frame.BackgroundTransparency = 1
+	frame.Parent = billboard
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "ESPName"
+	nameLabel.Size = UDim2.new(1, -8, 0, 20)
+	nameLabel.Position = UDim2.new(0, 4, 0, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = player.Name
+	nameLabel.TextColor3 = Color3.fromRGB(220, 180, 255)
+	nameLabel.Font = FONT
+	nameLabel.TextSize = NAME_TEXT_SIZE
+	nameLabel.TextStrokeTransparency = 0.5
+	nameLabel.Parent = frame
+
+	local barBack = Instance.new("Frame")
+	barBack.Name = "HealthBack"
+	barBack.Size = UDim2.new(1, -8, 0, 4)
+	barBack.Position = UDim2.new(0, 4, 0, 23)
+	barBack.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	barBack.BorderSizePixel = 0
+	barBack.Parent = frame
+
+	Instance.new("UICorner", barBack).CornerRadius = UDim.new(0, 8)
+
+	local healthFill = Instance.new("Frame")
+	healthFill.Name = "HealthFill"
+	healthFill.Size = UDim2.new(1, 0, 1, 0)
+	healthFill.BackgroundColor3 = Color3.fromRGB(80, 255, 80)
+	healthFill.BorderSizePixel = 0
+	healthFill.Parent = barBack
+
+	Instance.new("UICorner", healthFill).CornerRadius = UDim.new(0, 8)
+
+	return { billboard = billboard, healthFill = healthFill }
+end
+
+local function trackCharacter(character, player)
+	if player == LocalPlayer or tracked[character] then return end
+	local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 2)
+	if not humanoid then return end
+
+	local info = createBillboardForCharacter(character, player)
+	if not info then return end
+
+	updateHudForCharacter(info, humanoid)
+
+	local connHealth = humanoid.HealthChanged:Connect(function() updateHudForCharacter(info, humanoid) end)
+	local connDied = humanoid.Died:Connect(function() untrackCharacter(character) end)
+
+	tracked[character] = { info = info, connections = {connHealth, connDied} }
+end
+
+local function untrackCharacter(character)
+	if not tracked[character] then return end
+	for _, c in ipairs(tracked[character].connections) do pcall(function() c:Disconnect() end) end
+	if tracked[character].info.billboard then tracked[character].info.billboard:Destroy() end
+	tracked[character] = nil
+end
+
+local function toggleEspVisibility()
+	espVisible = not espVisible
+	print("ESP: " .. (espVisible and "ON" or "OFF"))
+	for _, t in pairs(tracked) do
+		if t.info and t.info.billboard then
+			t.info.billboard.Enabled = espVisible
+		end
+	end
+end
+
+-- ==================== OVERLAY - UI MENOR + COR AZUL CIANO ====================
+
+local function makeMovable(frame)
+	local dragging, dragStart, startPos
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+
+			local connMove = UserInputService.InputChanged:Connect(function(mv)
+				if mv.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+					local delta = mv.Position - dragStart
+					local newX = math.clamp(startPos.X.Offset + delta.X, 0, Camera.ViewportSize.X - frame.AbsoluteSize.X)
+					local newY = math.clamp(startPos.Y.Offset + delta.Y, 0, Camera.ViewportSize.Y - frame.AbsoluteSize.Y)
+					frame.Position = UDim2.new(0, newX, 0, newY)
+				end
+			end)
+
+			local connEnd = UserInputService.InputEnded:Connect(function(endInput)
+				if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
+					dragging = false
+					connMove:Disconnect()
+					connEnd:Disconnect()
+				end
+			end)
+		end
+	end)
+end
+
+local function createOverlayGui()
+	if overlayGui and overlayGui.Parent then return overlayGui end
+
+	local sg = Instance.new("ScreenGui")
+	sg.Name = "DevOverlayHUD"
+	sg.ResetOnSpawn = false
+	sg.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	local mainFrame = Instance.new("Frame")
+	mainFrame.Name = "OverlayFrame"
+	mainFrame.Size = UDim2.new(0, 520, 0, 340)
+	mainFrame.Position = UDim2.new(0, 30, 0.1, 0)
+	mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+	mainFrame.BackgroundTransparency = 0.08
+	mainFrame.Parent = sg
+
+	makeMovable(mainFrame)
+
+	Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 14)
+
+	-- Stroke com cor azul ciano
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(0, 200, 255)   -- Azul Ciano Neon
+	stroke.Thickness = 2
+	stroke.Parent = mainFrame
+
+	local strokeGrad = Instance.new("UIGradient")
+	strokeGrad.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 230, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 180, 255))
+	}
+	strokeGrad.Rotation = 90
+	strokeGrad.Parent = stroke
+
+	local bgGrad = Instance.new("UIGradient")
+	bgGrad.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(14, 14, 22)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 8, 14))
+	}
+	bgGrad.Rotation = 90
+	bgGrad.Parent = mainFrame
+
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -20, 0, 34)
+	title.Position = UDim2.new(0, 10, 0, 8)
+	title.BackgroundTransparency = 1
+	title.Text = "PLAYERS STATUS"
+	title.TextColor3 = Color3.fromRGB(200, 230, 255)   -- Azul claro suave
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 18
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextStrokeTransparency = 0.75
+	title.Parent = mainFrame
+
+	-- Headers
+	local headers = {
+		{Name = "NAME",     Size = 130, Pos = 0.05, Color = Color3.fromRGB(210,210,225)},
+		{Name = "HP",       Size = 55,  Pos = 0.38, Color = Color3.fromRGB(110,255,130)},
+		{Name = "CHI",      Size = 60,  Pos = 0.53, Color = Color3.fromRGB(100, 200, 255)},
+		{Name = "STAMINA2", Size = 72,  Pos = 0.69, Color = Color3.fromRGB(255, 185, 80)},
+		{Name = "MD",       Size = 55,  Pos = 0.86, Color = Color3.fromRGB(180, 140, 255)},
+	}
+
+	for _, h in ipairs(headers) do
+		local lbl = Instance.new("TextLabel")
+		lbl.Size = UDim2.new(0, h.Size, 0, 22)
+		lbl.Position = UDim2.new(h.Pos, 0, 0, 48)
+		lbl.BackgroundTransparency = 1
+		lbl.Text = h.Name
+		lbl.TextColor3 = h.Color
+		lbl.Font = Enum.Font.GothamSemibold
+		lbl.TextSize = 13
+		lbl.TextXAlignment = Enum.TextXAlignment.Left
+		lbl.Parent = mainFrame
+	end
+
+	-- Divider
+	local divider = Instance.new("Frame")
+	divider.Size = UDim2.new(1, -20, 0, 1)
+	divider.Position = UDim2.new(0, 10, 0, 72)
+	divider.BackgroundColor3 = Color3.fromRGB(255,255,255)
+	divider.BackgroundTransparency = 0.8
+	divider.Parent = mainFrame
+
+	-- Content
+	local content = Instance.new("Frame")
+	content.Name = "Content"
+	content.Size = UDim2.new(1, -20, 1, -92)
+	content.Position = UDim2.new(0, 10, 0, 80)
+	content.BackgroundTransparency = 1
+	content.Parent = mainFrame
+
+	overlayGui = sg
+	return sg
+end
+
+-- ==================== Funções do Overlay (mantidas) ====================
+
+local function FindPlayerMDValue(player)
+	local char = player.Character
+	if not char then return nil end
+	local combat = char:FindFirstChild("combat")
+	if combat then
+		local md = combat:FindFirstChild("mode")
+		if md and (md:IsA("IntValue") or md:IsA("NumberValue") or md:IsA("IntConstrainedValue")) then
+			return md
+		end
+	end
+	return nil
+end
+
+local function FindPlayerStaminaValue(player)
+	local char = player.Character
+	if not char then return nil end
+	local combat = char:FindFirstChild("combat")
+	if combat then
+		local s = combat:FindFirstChild("stamina")
+		if s and (s:IsA("IntValue") or s:IsA("NumberValue") or s:IsA("IntConstrainedValue")) then return s end
+	end
+	return nil
+end
+
+local function FindPlayerStamina2Value(player)
+	local char = player.Character
+	if not char then return nil end
+	local combat = char:FindFirstChild("combat")
+	if combat then
+		local s2 = combat:FindFirstChild("stamina2")
+		if s2 and (s2:IsA("IntValue") or s2:IsA("NumberValue") or s2:IsA("IntConstrainedValue")) then return s2 end
+	end
+	return nil
+end
+
+local function removeOverlayEntry(player)
+	if overlayList[player] and overlayList[player].entry then
+		overlayList[player].entry:Destroy()
+		overlayList[player] = nil
+	end
+end
+
+local function reorganizeOverlayEntries()
+	local content = overlayGui and overlayGui:FindFirstChild("OverlayFrame") and overlayGui.OverlayFrame:FindFirstChild("Content")
+	if not content then return end
+	local idx = 0
+	for _, v in pairs(overlayList) do
+		if v.entry and v.entry.Parent then
+			idx += 1
+			v.entry.Position = UDim2.new(0, 0, 0, (idx-1)*26)
+		end
+	end
+end
+
+local function ensureOverlayEntry(player)
+	if player == LocalPlayer or not overlayGui then return end
+	if overlayList[player] then return overlayList[player] end
+
+	local content = overlayGui.OverlayFrame.Content
+
+	local entry = Instance.new("Frame")
+	entry.Size = UDim2.new(1, 0, 0, 26)
+	entry.BackgroundTransparency = 1
+	entry.Parent = content
+
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Size = UDim2.new(0, 130, 1, 0)
+	nameLbl.Position = UDim2.new(0.05, 0, 0, 0)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Text = player.Name
+	nameLbl.TextColor3 = Color3.fromRGB(235, 235, 235)
+	nameLbl.Font = Enum.Font.Gotham
+	nameLbl.TextSize = 13
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.Parent = entry
+
+	local hpLbl = Instance.new("TextLabel") 
+	hpLbl.Size = UDim2.new(0,55,1,0) 
+	hpLbl.Position = UDim2.new(0.38,0,0,0) 
+	hpLbl.BackgroundTransparency=1 
+	hpLbl.TextColor3=Color3.fromRGB(235,235,235) 
+	hpLbl.Font=Enum.Font.GothamSemibold 
+	hpLbl.TextSize=13 
+	hpLbl.TextXAlignment=Enum.TextXAlignment.Left 
+	hpLbl.Text="100" 
+	hpLbl.Parent=entry
+
+	local chiLbl = Instance.new("TextLabel") 
+	chiLbl.Size = UDim2.new(0,60,1,0) 
+	chiLbl.Position = UDim2.new(0.53,0,0,0) 
+	chiLbl.BackgroundTransparency=1 
+	chiLbl.TextColor3=Color3.fromRGB(100, 200, 255) 
+	chiLbl.Font=Enum.Font.GothamSemibold 
+	chiLbl.TextSize=13 
+	chiLbl.TextXAlignment=Enum.TextXAlignment.Left 
+	chiLbl.Text="0" 
+	chiLbl.Parent=entry
+
+	local stam2Lbl = Instance.new("TextLabel") 
+	stam2Lbl.Size = UDim2.new(0,72,1,0) 
+	stam2Lbl.Position = UDim2.new(0.69,0,0,0) 
+	stam2Lbl.BackgroundTransparency=1 
+	stam2Lbl.TextColor3=Color3.fromRGB(255, 185, 80) 
+	stam2Lbl.Font=Enum.Font.GothamSemibold 
+	stam2Lbl.TextSize=13 
+	stam2Lbl.TextXAlignment=Enum.TextXAlignment.Left 
+	stam2Lbl.Text="0" 
+	stam2Lbl.Parent=entry
+
+	local mdLbl = Instance.new("TextLabel") 
+	mdLbl.Size = UDim2.new(0,55,1,0) 
+	mdLbl.Position = UDim2.new(0.86,0,0,0) 
+	mdLbl.BackgroundTransparency=1 
+	mdLbl.TextColor3=Color3.fromRGB(180, 140, 255) 
+	mdLbl.Font=Enum.Font.GothamSemibold 
+	mdLbl.TextSize=13 
+	mdLbl.TextXAlignment=Enum.TextXAlignment.Left 
+	mdLbl.Text="0" 
+	mdLbl.Parent=entry
+
+	overlayList[player] = {
+		entry = entry,
+		healthLabel = hpLbl,
+		chiLabel = chiLbl,
+		stamina2Label = stam2Lbl,
+		mdLabel = mdLbl
+	}
+	reorganizeOverlayEntries()
+	return overlayList[player]
+end
+
+local function updateOverlayForPlayer(player)
+	if not overlayVisible or not overlayList[player] then return end
+	local entry = overlayList[player]
+	local char = player.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+	if not hum then
+		entry.healthLabel.Text = "0"
+		return
+	end
+
+	local hp = math.floor(hum.Health)
+	entry.healthLabel.Text = tostring(hp)
+
+	local pct = hum.Health / hum.MaxHealth
+	if pct > 0.5 then entry.healthLabel.TextColor3 = Color3.fromRGB(110,255,130)
+	elseif pct > 0.3 then entry.healthLabel.TextColor3 = Color3.fromRGB(255,240,100)
+	else entry.healthLabel.TextColor3 = Color3.fromRGB(255,90,90) end
+
+	local md = FindPlayerMDValue(player)
+	entry.mdLabel.Text = md and tostring(md.Value) or "0"
+
+	local chi = FindPlayerStaminaValue(player)
+	entry.chiLabel.Text = chi and tostring(chi.Value) or "0"
+
+	local s2 = FindPlayerStamina2Value(player)
+	entry.stamina2Label.Text = s2 and tostring(s2.Value) or "0"
+end
+
+local function toggleOverlayVisibility()
+	if not overlayGui then createOverlayGui() end
+	overlayVisible = not overlayVisible
+	overlayGui.Enabled = overlayVisible
+	print("Overlay: " .. (overlayVisible and "ON" or "OFF"))
+end
+
+-- ==================== Conexões ====================
+
+local function onCharacterAdded(character, player)
+	trackCharacter(character, player)
+	if overlayVisible then
+		ensureOverlayEntry(player)
+		task.wait(0.1)
+		updateOverlayForPlayer(player)
+	end
+end
+
+local function onPlayerAdded(player)
+	player.CharacterAdded:Connect(function(c) onCharacterAdded(c, player) end)
+	if player.Character then onCharacterAdded(player.Character, player) end
+	ensureOverlayEntry(player)
+end
+
+-- Inicialização
+createOverlayGui()
+overlayGui.Enabled = true
+
+for _, p in ipairs(Players:GetPlayers()) do
+	onPlayerAdded(p)
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(function(p)
+	removeOverlayEntry(p)
+	if p.Character then untrackCharacter(p.Character) end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe or debounce then return end
+	if input.KeyCode == TOGGLE_KEY_ESP then
+		debounce = true
+		toggleEspVisibility()
+		task.delay(DEBOUNCE_TIME, function() debounce = false end)
+	elseif input.KeyCode == TOGGLE_KEY_OVERLAY then
+		debounce = true
+		toggleOverlayVisibility()
+		task.delay(DEBOUNCE_TIME, function() debounce = false end)
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	if overlayVisible and overlayGui and overlayGui.Enabled then
+		for player in pairs(overlayList) do
+			updateOverlayForPlayer(player)
+		end
+	end
+end)
+
+print("=== ESP + Overlay (Azul Ciano) Carregado ===")
+print("U → Alternar ESP")
+print("RightShift → Alternar Overlay")
