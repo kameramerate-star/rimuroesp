@@ -466,7 +466,7 @@ local FlyToggle = MainTab:CreateToggle({
 
 MainTab:CreateSlider({
     Name = "Fly Speed",
-    Range = {10, 300},
+    Range = {10, 5000},
     Increment = 1,
     CurrentValue = 50,
     Callback = function(Value) flySpeed = Value end
