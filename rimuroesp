@@ -398,13 +398,11 @@ end)
 local function startFly()
     if flying then return end
     flying = true
-
     bodyVelocity = Instance.new("BodyVelocity")
     bodyGyro = Instance.new("BodyGyro")
     bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
     bodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
     bodyGyro.P = 9000
-
     bodyVelocity.Parent = root
     bodyGyro.Parent = root
 
@@ -412,15 +410,15 @@ local function startFly()
         if not flying then return end
         local cam = workspace.CurrentCamera
         local move = Vector3.new()
-
         local UIS = game:GetService("UserInputService")
+        
         if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
         if UIS:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
         if UIS:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
         if UIS:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
         if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0,1,0) end
         if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move -= Vector3.new(0,1,0) end
-
+        
         bodyVelocity.Velocity = (move.Magnitude > 0 and move.Unit or Vector3.new()) * flySpeed
         bodyGyro.CFrame = cam.CFrame
     end)
@@ -447,20 +445,19 @@ local function toggleNoclip(state)
             end
         end)
     else
-        if noclipConnection then 
-            noclipConnection:Disconnect() 
-            noclipConnection = nil 
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
         end
     end
 end
 
 -- ==================== UI ====================
-
 local FlyToggle = MainTab:CreateToggle({
     Name = "Fly",
     CurrentValue = false,
-    Callback = function(Value) 
-        if Value then startFly() else stopFly() end 
+    Callback = function(Value)
+        if Value then startFly() else stopFly() end
     end
 })
 
@@ -475,8 +472,8 @@ MainTab:CreateSlider({
 local NoclipToggle = MainTab:CreateToggle({
     Name = "Noclip",
     CurrentValue = false,
-    Callback = function(Value) 
-        toggleNoclip(Value) 
+    Callback = function(Value)
+        toggleNoclip(Value)
     end
 })
 
@@ -491,25 +488,23 @@ MainTab:CreateSection("Keybinds Configuráveis")
 
 MainTab:CreateKeybind({
     Name = "Toggle Fly (Padrão: P)",
-    CurrentKeybind = "G",
+    CurrentKeybind = "P",        -- Alterado para P
     Callback = function()
-        local newState = not FlyToggle.CurrentValue
-        FlyToggle:Set(newState)
+        FlyToggle:Set(not FlyToggle.CurrentValue)
     end
 })
 
 MainTab:CreateKeybind({
     Name = "Toggle Noclip (Padrão: L)",
-    CurrentKeybind = "N",
+    CurrentKeybind = "L",        -- Alterado para L
     Callback = function()
-        local newState = not NoclipToggle.CurrentValue
-        NoclipToggle:Set(newState)   -- Isso agora deve funcionar corretamente
+        NoclipToggle:Set(not NoclipToggle.CurrentValue)
     end
 })
 
 MainTab:CreateKeybind({
     Name = "Toggle Inf Jump (Padrão: 9)",
-    CurrentKeybind = "V",
+    CurrentKeybind = "Nine",     -- Alterado para 9
     Callback = function()
         infJumpEnabled = not infJumpEnabled
         Rayfield:Notify({Title = "Inf Jump", Content = infJumpEnabled and "ON" or "OFF", Duration = 2})
@@ -523,4 +518,4 @@ game:GetService("UserInputService").JumpRequest:Connect(function()
     end
 end)
 
-Rayfield:Notify({Title = "Script OK!", Content = "Keybinds corrigidos!", Duration = 5})
+Rayfield:Notify({Title = "Script OK!", Content = "Keybinds atualizadas: P | L | 9", Duration = 5})
