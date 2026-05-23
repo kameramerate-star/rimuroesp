@@ -490,7 +490,7 @@ MainTab:CreateToggle({
 MainTab:CreateSection("Keybinds Configuráveis")
 
 MainTab:CreateKeybind({
-    Name = "Toggle Fly (Padrão: G)",
+    Name = "Toggle Fly (Padrão: P)",
     CurrentKeybind = "G",
     Callback = function()
         local newState = not FlyToggle.CurrentValue
@@ -499,7 +499,7 @@ MainTab:CreateKeybind({
 })
 
 MainTab:CreateKeybind({
-    Name = "Toggle Noclip (Padrão: N)",
+    Name = "Toggle Noclip (Padrão: L)",
     CurrentKeybind = "N",
     Callback = function()
         local newState = not NoclipToggle.CurrentValue
@@ -508,7 +508,7 @@ MainTab:CreateKeybind({
 })
 
 MainTab:CreateKeybind({
-    Name = "Toggle Inf Jump (Padrão: V)",
+    Name = "Toggle Inf Jump (Padrão: 9)",
     CurrentKeybind = "V",
     Callback = function()
         infJumpEnabled = not infJumpEnabled
