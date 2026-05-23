@@ -92,14 +92,14 @@ end
 ShowRimuroMessage()
 -- =============================================
 -- =============================================
--- ESP PREMIUM - Rimuro + Grok Edition ✨ (MD + DIST FIXADO v3.1)
+-- ESP PREMIUM - Rimuro Edition ✨ (MD + DIST FIXADO v3.1)
 -- Tecla: U
 -- =============================================
 
 print(" ")
 print("============================================")
 print("🔥 ESP Premium made by RIMURO 🔥")
-print("        Grok Edition - MD + Dist Fixado")
+print("       Edition - MD + Dist Fixado")
 print("============================================")
 print(" ")
 
