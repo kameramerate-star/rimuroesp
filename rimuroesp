@@ -116,6 +116,15 @@ local COLORS = {
     MD = Color3.fromRGB(255, 140, 255)
 }
 
+-- ==================== FUNÇÃO TOGGLE (CORRIGIDA PARA O TOPO) ====================
+local function toggleESP()
+    espEnabled = not espEnabled
+    for _, data in pairs(tracked) do
+        if data.billboard then data.billboard.Enabled = espEnabled end
+    end
+    print("ESP:", espEnabled and "ON ✅" or "OFF ❌")
+end
+
 -- ==================== GET MD (VERSÃO ULTRA FORTE) ====================
 local function GetMD(player)
     local char = player.Character
@@ -202,7 +211,7 @@ local function createESP(character, player)
     nameLbl.TextSize = 15.5
     nameLbl.TextStrokeTransparency = 0.5
 
-    -- Health Bar (mantida igual)
+    -- Health Bar
     local healthBg = Instance.new("Frame", frame)
     healthBg.Size = UDim2.new(0.90, 0, 0, 9)
     healthBg.Position = UDim2.new(0.05, 0, 0, 24)
@@ -245,7 +254,7 @@ local function createESP(character, player)
     mdLbl.TextStrokeTransparency = 0.5
     mdLbl.Text = "MD: —"
 
-    -- Health
+    -- Health Event
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if humanoid then
         humanoid.HealthChanged:Connect(function()
@@ -255,8 +264,8 @@ local function createESP(character, player)
             healthBar:TweenSize(UDim2.new(percent, 0, 1, 0), "Out", "Linear", 0.1, true)
             hpLbl.Text = string.format("HP: %d/%d", math.floor(health), math.floor(maxHealth))
         end)
-        task.spawn(function() -- primeira atualização de HP
-            wait(0.5)
+        task.spawn(function() -- primeira atualização de HP (Corrigido para task.wait)
+            task.wait(0.5)
             if humanoid.Parent then
                 local health = humanoid.Health
                 local maxHealth = humanoid.MaxHealth
@@ -331,14 +340,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed or input.KeyCode ~= Enum.KeyCode.U then return end
     toggleESP()
 end)
-
-local function toggleESP()
-    espEnabled = not espEnabled
-    for _, data in pairs(tracked) do
-        if data.billboard then data.billboard.Enabled = espEnabled end
-    end
-    print("ESP:", espEnabled and "ON ✅" or "OFF ❌")
-end
 
 print("✅ ESP Premium Rimuro (MD + Dist Debug) carregado!")
 print("Pressione U para ligar/desligar")
