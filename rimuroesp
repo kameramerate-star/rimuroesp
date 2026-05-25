@@ -92,7 +92,7 @@ end
 ShowRimuroMessage()
 -- =============================================
 -- =============================================
--- ESP PREMIUM - Rimuro Edition ✨ (Ultra Compacto + Long Range)
+-- ESP PREMIUM - Rimuro Edition ✨ (MD + Dist Debug)
 -- Tecla: U
 -- =============================================
 local Players = game:GetService("Players")
@@ -105,7 +105,7 @@ local espEnabled = true
 
 -- ==================== CONFIGURAÇÕES ====================
 local FADE_DISTANCE = 280
-local MAX_DISTANCE = 1000000        -- Aumentado para 1 milhão
+local MAX_DISTANCE = 100000
 
 local COLORS = {
     Name = Color3.fromRGB(255, 200, 255),
@@ -116,18 +116,24 @@ local COLORS = {
     MD = Color3.fromRGB(255, 140, 255)
 }
 
--- ==================== GET MD ====================
+-- ==================== GET MD (VERSÃO ULTRA FORTE) ====================
 local function GetMD(player)
     local char = player.Character
     if not char then return "—" end
-   
+
     local data = tracked[char]
+
+    -- Cache
     if data and data.mdValue and data.mdValue.Parent then
-        local val = data.mdValue.Value
-        return typeof(val) == "number" and math.floor(val) or tostring(val)
+        return math.floor(data.mdValue.Value)
     end
 
-    local paths = {{"combat", "mode"}, {"Combat", "mode"}, {"Mode"}, {"mode"}}
+    -- Busca em caminhos comuns
+    local paths = {
+        {"combat", "mode"}, {"combat", "Mode"}, {"Combat", "mode"}, {"Combat", "Mode"},
+        {"Mode"}, {"mode"}, {"currentMode"}, {"CombatMode"}
+    }
+
     for _, path in ipairs(paths) do
         local obj = char
         local found = true
@@ -140,15 +146,36 @@ local function GetMD(player)
             return math.floor(obj.Value)
         end
     end
+
+    -- Busca profunda em todos os descendants
+    for _, obj in ipairs(char:GetDescendants()) do
+        if (obj:IsA("IntValue") or obj:IsA("NumberValue") or obj:IsA("IntConstrainedValue")) then
+            local nameLower = obj.Name:lower()
+            if nameLower:find("mode") or nameLower:find("md") or nameLower:find("stance") then
+                if data then data.mdValue = obj end
+                return math.floor(obj.Value)
+            end
+        end
+    end
+
     return "—"
+end
+
+local function GetMyRoot()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    return char:FindFirstChild("HumanoidRootPart")
 end
 
 -- ==================== CREATE ESP ====================
 local function createESP(character, player)
     if player == LocalPlayer or tracked[character] then return end
 
-    local root = character:WaitForChild("HumanoidRootPart", 5)
-    if not root then return end
+    local root = character:WaitForChild("HumanoidRootPart", 10)
+    if not root then 
+        print("ESP: Não encontrou HumanoidRootPart para", player.Name)
+        return 
+    end
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "RimuroESP"
@@ -156,7 +183,7 @@ local function createESP(character, player)
     billboard.AlwaysOnTop = true
     billboard.Size = UDim2.new(0, 205, 0, 78)
     billboard.StudsOffset = Vector3.new(0, 4.8, 0)
-    billboard.MaxDistance = MAX_DISTANCE        -- 1 milhão
+    billboard.MaxDistance = MAX_DISTANCE
     billboard.LightInfluence = 0
     billboard.Enabled = espEnabled
     billboard.Parent = root
@@ -166,7 +193,6 @@ local function createESP(character, player)
     frame.BackgroundTransparency = 1
     frame.Parent = billboard
 
-    -- Nome
     local nameLbl = Instance.new("TextLabel", frame)
     nameLbl.Size = UDim2.new(1,0,0,22)
     nameLbl.BackgroundTransparency = 1
@@ -176,30 +202,19 @@ local function createESP(character, player)
     nameLbl.TextSize = 15.5
     nameLbl.TextStrokeTransparency = 0.5
 
-    -- Health Bar Background
+    -- Health Bar (mantida igual)
     local healthBg = Instance.new("Frame", frame)
     healthBg.Size = UDim2.new(0.90, 0, 0, 9)
     healthBg.Position = UDim2.new(0.05, 0, 0, 24)
     healthBg.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    healthBg.BorderSizePixel = 0
+    local bgCorner = Instance.new("UICorner", healthBg); bgCorner.CornerRadius = UDim.new(1, 0)
+    local blackStroke = Instance.new("UIStroke", healthBg); blackStroke.Color = Color3.fromRGB(0,0,0); blackStroke.Thickness = 2.2
 
-    local bgCorner = Instance.new("UICorner", healthBg)
-    bgCorner.CornerRadius = UDim.new(1, 0)
-
-    local blackStroke = Instance.new("UIStroke", healthBg)
-    blackStroke.Color = Color3.fromRGB(0, 0, 0)
-    blackStroke.Thickness = 2.2
-
-    -- Health Bar Fill
     local healthBar = Instance.new("Frame", healthBg)
-    healthBar.Size = UDim2.new(1, 0, 1, 0)
+    healthBar.Size = UDim2.new(1,0,1,0)
     healthBar.BackgroundColor3 = COLORS.HealthHigh
-    healthBar.BorderSizePixel = 0
+    local barCorner = Instance.new("UICorner", healthBar); barCorner.CornerRadius = UDim.new(1, 0)
 
-    local barCorner = Instance.new("UICorner", healthBar)
-    barCorner.CornerRadius = UDim.new(1, 0)
-
-    -- HP Label
     local hpLbl = Instance.new("TextLabel", frame)
     hpLbl.Size = UDim2.new(1,0,0,16)
     hpLbl.Position = UDim2.new(0,0,0,35)
@@ -210,7 +225,6 @@ local function createESP(character, player)
     hpLbl.TextSize = 13
     hpLbl.TextStrokeTransparency = 0.6
 
-    -- Distance
     local distLbl = Instance.new("TextLabel", frame)
     distLbl.Size = UDim2.new(1,0,0,16)
     distLbl.Position = UDim2.new(0,0,0,51)
@@ -221,7 +235,6 @@ local function createESP(character, player)
     distLbl.TextStrokeTransparency = 0.6
     distLbl.Text = "Dist: —"
 
-    -- MD
     local mdLbl = Instance.new("TextLabel", frame)
     mdLbl.Size = UDim2.new(1,0,0,16)
     mdLbl.Position = UDim2.new(0,0,0,66)
@@ -232,30 +245,24 @@ local function createESP(character, player)
     mdLbl.TextStrokeTransparency = 0.5
     mdLbl.Text = "MD: —"
 
-    -- Health Update
+    -- Health
     local humanoid = character:FindFirstChildOfClass("Humanoid")
-    local function updateHealth()
-        if not humanoid or not humanoid.Parent then return end
-        local health = humanoid.Health
-        local maxHealth = humanoid.MaxHealth
-        local percent = math.clamp(health / maxHealth, 0, 1)
-
-        healthBar:TweenSize(UDim2.new(percent, 0, 1, 0), "Out", "Linear", 0.1, true)
-
-        if percent > 0.6 then
-            healthBar.BackgroundColor3 = COLORS.HealthHigh
-        elseif percent > 0.35 then
-            healthBar.BackgroundColor3 = COLORS.HealthMed
-        else
-            healthBar.BackgroundColor3 = COLORS.HealthLow
-        end
-
-        hpLbl.Text = string.format("HP: %d/%d", math.floor(health), math.floor(maxHealth))
-    end
-
     if humanoid then
-        humanoid.HealthChanged:Connect(updateHealth)
-        task.spawn(updateHealth)
+        humanoid.HealthChanged:Connect(function()
+            local health = humanoid.Health
+            local maxHealth = humanoid.MaxHealth
+            local percent = math.clamp(health / maxHealth, 0, 1)
+            healthBar:TweenSize(UDim2.new(percent, 0, 1, 0), "Out", "Linear", 0.1, true)
+            hpLbl.Text = string.format("HP: %d/%d", math.floor(health), math.floor(maxHealth))
+        end)
+        task.spawn(function() -- primeira atualização de HP
+            wait(0.5)
+            if humanoid.Parent then
+                local health = humanoid.Health
+                local maxHealth = humanoid.MaxHealth
+                hpLbl.Text = string.format("HP: %d/%d", math.floor(health), math.floor(maxHealth))
+            end
+        end)
     end
 
     tracked[character] = {
@@ -268,21 +275,12 @@ local function createESP(character, player)
         mdValue = nil
     }
 
-    task.delay(0.4, function()
-        if tracked[character] and LocalPlayer.Character then
-            local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if myRoot then
-                local dist = (root.Position - myRoot.Position).Magnitude
-                distLbl.Text = string.format("Dist: %.0fm", dist)
-            end
-            mdLbl.Text = "MD: " .. GetMD(player)
-        end
-    end)
+    print("ESP Criado para:", player.Name)
 end
 
 -- ==================== UPDATE LOOP ====================
 local function updateLoop()
-    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local myRoot = GetMyRoot()
     if not myRoot then return end
 
     for character, data in pairs(tracked) do
@@ -292,33 +290,24 @@ local function updateLoop()
             continue
         end
 
-        local dist = (data.root.Position - myRoot.Position).Magnitude
-        data.distLbl.Text = string.format("Dist: %.0fm", dist)
-        data.mdLbl.Text = "MD: " .. GetMD(data.player)
-
-        if dist > FADE_DISTANCE then
-            local alpha = math.clamp(1 - (dist - FADE_DISTANCE)/140, 0.35, 1)
-            data.frame.GroupTransparency = 1 - alpha
-        else
-            data.frame.GroupTransparency = 0
+        if not data.root or not data.root.Parent then
+            data.root = character:FindFirstChild("HumanoidRootPart")
         end
+
+        if data.root and data.root.Parent then
+            local dist = (data.root.Position - myRoot.Position).Magnitude
+            data.distLbl.Text = string.format("Dist: %.0fm", dist)
+        end
+
+        data.mdLbl.Text = "MD: " .. GetMD(data.player)
     end
 end
 
 RunService.Heartbeat:Connect(updateLoop)
 
--- ==================== TOGGLE ====================
-local function toggleESP()
-    espEnabled = not espEnabled
-    for _, data in pairs(tracked) do
-        if data.billboard then data.billboard.Enabled = espEnabled end
-    end
-    print("ESP:", espEnabled and "ON ✅" or "OFF ❌")
-end
-
--- ==================== SETUP ====================
+-- ==================== SETUP + DEBUG ====================
 local function onCharacterAdded(player, character)
-    task.delay(1, function()
+    task.delay(1.8, function()
         if character and character.Parent then
             createESP(character, player)
         end
@@ -343,8 +332,17 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     toggleESP()
 end)
 
-print("✅ ESP Premium Rimuro (Ultra Compacto + 1M Distance) carregado!")
+local function toggleESP()
+    espEnabled = not espEnabled
+    for _, data in pairs(tracked) do
+        if data.billboard then data.billboard.Enabled = espEnabled end
+    end
+    print("ESP:", espEnabled and "ON ✅" or "OFF ❌")
+end
+
+print("✅ ESP Premium Rimuro (MD + Dist Debug) carregado!")
 print("Pressione U para ligar/desligar")
+print("Olhe o console (F9) para ver mensagens de debug")
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
