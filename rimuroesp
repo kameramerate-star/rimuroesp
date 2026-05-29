@@ -231,9 +231,9 @@ local Footer = Instance.new("TextLabel")
 Footer.Size = UDim2.new(1, -30, 0, 30)
 Footer.Position = UDim2.new(0, 15, 1, -35)
 Footer.BackgroundTransparency = 1
-Footer.Text = "Aperte [F8] para ocultar ou mostrar o menu"
+Footer.Text = "[F8] Ocultar Menu | Altere os valores clicando nas caixas"
 Footer.TextColor3 = Colors.TextMuted
-Footer.TextSize = 12
+Footer.TextSize = 11
 Footer.Font = Enum.Font.Gotham
 Footer.Parent = MainFrame
 
@@ -248,17 +248,24 @@ local espEnabled = false
 
 local flySpeed = 50
 local tpWalkSpeed = 50
-local currentFov = 70
+local maxCameraZoom = 120 -- Padrão estendido confortável (Roblox limita a 128 por padrão)
+
+-- Variáveis do Sistema de Alvo Integrado
+local playerList = {}
+local targetIdx = 1
 
 local bodyVelocity, bodyGyro = nil, nil
 local camera = workspace.CurrentCamera
 
+-- Lista unificada de Keybinds mutáveis e fixas
 local Keys = {
     Fly = Enum.KeyCode.P,
     Noclip = Enum.KeyCode.L,
     InfJump = Enum.KeyCode.Nine,
     TpWalk = Enum.KeyCode.K,
-    ESP = Enum.KeyCode.U
+    ESP = Enum.KeyCode.U,
+    CycleTarget = Enum.KeyCode.RightShift,
+    TeleportTarget = Enum.KeyCode.H      
 }
 
 local tracked = {}
@@ -271,12 +278,68 @@ local function getLocalCharacterData()
     return char, hrp, hum
 end
 
+-- Monitoramento contínuo da distância da câmera
 RunService.RenderStepped:Connect(function()
-    camera = workspace.CurrentCamera
-    if camera and camera.FieldOfView ~= currentFov then
-        camera.FieldOfView = currentFov
+    if LocalPlayer and LocalPlayer.CameraMaxZoomDistance ~= maxCameraZoom then
+        LocalPlayer.CameraMaxZoomDistance = maxCameraZoom
     end
 end)
+
+-- ==================== LÓGICA DE ALVO E TELEPORTE INTERNA ====================
+local function getPlayers()
+    playerList = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(playerList, p)
+        end
+    end
+    if targetIdx > #playerList then
+        targetIdx = #playerList > 0 and 1 or 0
+    end
+end
+
+local function getTarget()
+    getPlayers()
+    if #playerList == 0 then return nil end
+    return playerList[targetIdx]
+end
+
+local updateTargetUIElement = nil 
+
+local function cyclePlayer(dir)
+    getPlayers()
+    if #playerList == 0 then 
+        targetIdx = 0
+        if updateTargetUIElement then updateTargetUIElement("nenhum") end
+        return 
+    end
+    
+    targetIdx = targetIdx + dir
+    if targetIdx > #playerList then
+        targetIdx = 1
+    elseif targetIdx < 1 then
+        targetIdx = #playerList
+    end
+    
+    local currentTarget = getTarget()
+    if updateTargetUIElement then 
+        updateTargetUIElement(currentTarget and currentTarget.Name or "nenhum") 
+    end
+end
+
+local function teleportBehind()
+    local t = getTarget()
+    if not t then return end
+
+    local tc = t.Character
+    local _, myRoot, _ = getLocalCharacterData()
+    if not (tc and tc:FindFirstChild("HumanoidRootPart") and myRoot) then return end
+
+    local root   = tc.HumanoidRootPart
+    local behind = root.CFrame - root.CFrame.LookVector * 3
+
+    myRoot.CFrame = behind
+end
 
 -- ==================== LÓGICA DO ESP REFORMULADA E SEGURO ====================
 local function GetMD(player)
@@ -321,7 +384,6 @@ local function GetMD(player)
     return success and result or "—"
 end
 
--- Função para destruir o ESP de um player específico de forma limpa
 local function removeESP(player)
     if tracked[player] then
         pcall(function()
@@ -334,12 +396,11 @@ local function removeESP(player)
 end
 
 local function createESP(player)
-    removeESP(player) -- Evita duplicatas se chamado repetidamente
+    removeESP(player)
 
     local char = player.Character
     if not char then return end
 
-    -- Sistema de Fallback de peças para não quebrar em jogos customizados
     local r = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("Head")
     if not r then return end
 
@@ -420,7 +481,6 @@ local function createESP(player)
     }
 end
 
--- Loop centralizado e extremamente veloz para atualizar e garantir a existência do ESP
 RunService.Heartbeat:Connect(function()
     local _, myRoot, _ = getLocalCharacterData()
     
@@ -430,48 +490,38 @@ RunService.Heartbeat:Connect(function()
             local data = tracked[plr]
             
             if char and char.Parent then
-                -- Se o personagem existe mas o ESP sumiu/foi deletado pelo jogo, recria na hora
                 if not data or not data.billboard or not data.billboard.Parent then
                     pcall(function() createESP(plr) end)
                     data = tracked[plr]
                 end
                 
                 if data then
-                    -- Atualiza a distância em tempo real
                     local targetRoot = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("Head")
                     if myRoot and targetRoot then
                         local dist = (targetRoot.Position - myRoot.Position).Magnitude
                         data.distLbl.Text = string.format("Dist: %.0fm", dist)
-                    else
-                        data.distLbl.Text = "Dist: —"
                     end
                     
-                    -- Atualiza a vida de forma direta e sem eventos
                     local hum = char:FindFirstChildOfClass("Humanoid")
                     if hum then
                         local maxHp = hum.MaxHealth > 0 and hum.MaxHealth or 100
                         local percent = math.clamp(hum.Health / maxHp, 0, 1)
                         data.healthBar.Size = UDim2.new(percent, 0, 1, 0)
                         data.hpLbl.Text = string.format("HP: %d/%d", math.floor(hum.Health), math.floor(maxHp))
-                    else
-                        data.hpLbl.Text = "HP: —"
                     end
                     
-                    -- Atualiza o MD customizado
                     data.mdLbl.Text = "MD: " .. GetMD(plr)
                 end
             else
-                -- Limpa da memória caso o jogador morra ou suma da renderização
                 if data then removeESP(plr) end
             end
         end
     end
 end)
 
--- Vincular eventos para limpar jogadores que saem do servidor
 Players.PlayerRemoving:Connect(removeESP)
 
--- ==================== MECÂNICAS COM PROTEÇÃO DINÂMICA ====================
+-- ==================== MECÂNICAS DE MOVIMENTAÇÃO ====================
 local function startFly()
     if flying then return end
     local _, myRoot, _ = getLocalCharacterData()
@@ -707,6 +757,56 @@ local function createValueInputRow(titleLabel, defaultValue, callback)
     end)
 end
 
+local function createTargetManagerRow()
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -6, 0, 50)
+    row.BackgroundColor3 = Colors.Card
+    row.BorderSizePixel = 0
+    row.Parent = Container
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = row
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Colors.Border
+    stroke.Thickness = 1
+    stroke.Parent = row
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = "Alvo Atual:"
+    label.TextColor3 = Colors.TextMuted
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local targetDisplay = Instance.new("TextButton")
+    targetDisplay.Size = UDim2.new(0.55, 0, 0.6, 0)
+    targetDisplay.Position = UDim2.new(0.42, 0, 0.2, 0)
+    targetDisplay.BackgroundColor3 = Colors.Background
+    targetDisplay.Text = "nenhum"
+    targetDisplay.TextColor3 = Color3.fromRGB(137, 212, 234)
+    targetDisplay.Font = Enum.Font.GothamBold
+    targetDisplay.TextSize = 11
+    targetDisplay.TextTruncate = Enum.TextTruncate.AtEnd
+    targetDisplay.Parent = row
+
+    local tdCorner = Instance.new("UICorner", targetDisplay); tdCorner.CornerRadius = UDim.new(0, 6)
+    local tdStroke = Instance.new("UIStroke", targetDisplay); tdStroke.Color = Colors.Border
+
+    targetDisplay.MouseButton1Click:Connect(function()
+        cyclePlayer(1)
+    end)
+
+    updateTargetUIElement = function(newName)
+        targetDisplay.Text = newName
+    end
+end
+
 -- ==================== CONSTRUÇÃO DA UI ====================
 local flyRow = createRow("Fly Mode", "Fly", true, function(state)
     if state then startFly() else stopFly() end
@@ -741,6 +841,16 @@ local espRow = createRow("ESP Premium (MD + Dist)", "ESP", true, function(state)
     end
 end)
 
+createTargetManagerRow()
+
+local cycleTargetRow = createRow("Mudar Alvo (Shift Dir)", "CycleTarget", true, function()
+    cyclePlayer(1)
+end)
+
+local teleportTargetRow = createRow("Teleportar Atrás (H)", "TeleportTarget", true, function()
+    teleportBehind()
+end)
+
 local clickTpRow = createRow("Click TP (Ctrl + Clique)", "ClickTp", false, function(state)
     clickTpEnabled = state
 end)
@@ -749,11 +859,13 @@ local antiAfkRow = createRow("Anti-AFK (Desconexão)", "AntiAfk", false, functio
     antiAfkEnabled = state
 end)
 
-createValueInputRow("Field of View (FOV)", currentFov, function(value)
+-- NOVO: Modificado de FOV para Distância Máxima do Zoom da Câmera (Sem distorcer a imagem)
+createValueInputRow("Distância Câmera (Zoom)", maxCameraZoom, function(value)
     if value then 
-        currentFov = math.clamp(value, 30, 120)
+        maxCameraZoom = math.clamp(value, 10, 500) -- Limites seguros de zoom
+        if LocalPlayer then LocalPlayer.CameraMaxZoomDistance = maxCameraZoom end
     end
-    return currentFov
+    return maxCameraZoom
 end)
 
 -- ==================== SENSOR DE ENTRADA CONFIGURADO ====================
@@ -770,6 +882,10 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
         infJumpRow.Trigger()
     elseif input.KeyCode == Keys.ESP then
         espRow.Trigger()
+    elseif input.KeyCode == Keys.CycleTarget then
+        cyclePlayer(1)
+    elseif input.KeyCode == Keys.TeleportTarget then
+        teleportBehind()
     elseif input.KeyCode == Enum.KeyCode.F8 then
         MainFrame.Visible = not MainFrame.Visible
     end
@@ -793,3 +909,9 @@ UIS.JumpRequest:Connect(function()
         end
     end
 end)
+
+getPlayers()
+local initialTarget = getTarget()
+if updateTargetUIElement then 
+    updateTargetUIElement(initialTarget and initialTarget.Name or "nenhum") 
+end
