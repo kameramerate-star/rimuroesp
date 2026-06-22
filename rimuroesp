@@ -12,13 +12,12 @@ pcall(function()
     gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name
 end)
 
--- Link de inicialização baseado no PlaceId e JobId atual
 local joinLink = "roblox://experiences/start?placeId=" .. game.PlaceId .. "&gameInstanceId=" .. game.JobId
 
 local embed = {
     embeds = {{
-        title = "***Seu script foi executado!***",
-        color = 11024343, -- Cor roxa em formato decimal
+        title = "***Seu script foi executado claraengine!***",
+        color = 11024343,
         description = "***Display Name: ***" .. localPlayer.DisplayName .. "\n" ..
                       "***Username: *** @" .. localPlayer.Name .. "\n" ..
                       "***Jogo: *** " .. gameName .. "\n" ..
@@ -38,26 +37,25 @@ if request_func then
 else
     warn("Não foi possível encontrar uma função de requisição HTTP compatível (request/http_request).")
 end
+
 local function ShowRimuroMessage()
     local Players = game:GetService("Players")
     local TweenService = game:GetService("TweenService")
     local CoreGui = game:GetService("CoreGui")
-    
+
     local localPlayer = Players.LocalPlayer
     local targetParent = CoreGui:FindFirstChild("ClaraFunctionsUI") or CoreGui or localPlayer:WaitForChild("PlayerGui")
 
-    -- Container Principal
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "RimuroWelcomeInterface"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = targetParent
 
-    -- Card Central (Estilo Vidro Escuro) - POSIÇÃO ALTERADA PARA O TOPO
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 420, 0, 110) -- Diminuído levemente a altura para encaixar melhor no topo
-    frame.Position = UDim2.new(0.5, -210, 0.1, 40) -- Começa um pouco mais abaixo para animar
+    frame.Size = UDim2.new(0, 420, 0, 110)
+    frame.Position = UDim2.new(0.5, -210, 0.1, 40)
     frame.BackgroundColor3 = Color3.fromRGB(15, 11, 25)
-    frame.BackgroundTransparency = 1 
+    frame.BackgroundTransparency = 1
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
 
@@ -65,14 +63,12 @@ local function ShowRimuroMessage()
     corner.CornerRadius = UDim.new(0, 14)
     corner.Parent = frame
 
-    -- Borda Fina e Elegante
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(168, 85, 247) 
+    stroke.Color = Color3.fromRGB(168, 85, 247)
     stroke.Thickness = 1.2
-    stroke.Transparency = 1 
+    stroke.Transparency = 1
     stroke.Parent = frame
 
-    -- Gradiente de Fundo Interno
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 18, 42)),
@@ -81,56 +77,48 @@ local function ShowRimuroMessage()
     gradient.Rotation = 45
     gradient.Parent = frame
 
-    -- Título Principal (Clara Engine)
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 40)
     title.Position = UDim2.new(0, 0, 0.2, 0)
     title.BackgroundTransparency = 1
-    title.Text = "CLARA ENGINE" 
+    title.Text = "CLARA ENGINE"
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 26
     title.TextTransparency = 1
     title.Parent = frame
 
-    -- Subtítulo / Créditos
     local credit = Instance.new("TextLabel")
     credit.Size = UDim2.new(1, 0, 0, 20)
     credit.Position = UDim2.new(0, 0, 0.58, 0)
     credit.BackgroundTransparency = 1
     credit.Text = "developed by Rimuro"
-    credit.TextColor3 = Color3.fromRGB(168, 85, 247) 
+    credit.TextColor3 = Color3.fromRGB(168, 85, 247)
     credit.Font = Enum.Font.GothamMedium
     credit.TextSize = 13
     credit.TextTransparency = 1
     credit.Parent = frame
 
-    -- Configuração das Animações (TweenInfo)
     local tweenInInfo = TweenInfo.new(0.8, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
     local tweenOutInfo = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
-    -- Executando a animação de Entrada (Sobe suavemente até a posição final no topo)
     TweenService:Create(frame, tweenInInfo, {Position = UDim2.new(0.5, -210, 0.1, 0), BackgroundTransparency = 0.15}):Play()
     TweenService:Create(stroke, tweenInInfo, {Transparency = 0.3}):Play()
     TweenService:Create(title, tweenInInfo, {TextTransparency = 0}):Play()
     TweenService:Create(credit, tweenInInfo, {TextTransparency = 0}):Play()
 
-    -- Tempo de exibição antes de desaparecer
     task.delay(2.8, function()
-        -- Executando a animação de Saída (Sobe mais um pouquinho enquanto some)
         TweenService:Create(frame, tweenOutInfo, {Position = UDim2.new(0.5, -210, 0.1, -30), BackgroundTransparency = 1}):Play()
         TweenService:Create(stroke, tweenOutInfo, {Transparency = 1}):Play()
         TweenService:Create(title, tweenOutInfo, {TextTransparency = 1}):Play()
         TweenService:Create(credit, tweenOutInfo, {TextTransparency = 1}):Play()
-
-        -- Limpeza completa
         task.wait(0.6)
         screenGui:Destroy()
     end)
 end
 
--- Chamar a animação
 ShowRimuroMessage()
+
 if game.CoreGui:FindFirstChild("ClaraFunctionsUI") then
     game.CoreGui.ClaraFunctionsUI:Destroy()
 end
@@ -140,15 +128,17 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- ==================== CONFIGURAÇÃO DE CORES (ROXO ESCURO) ====================
+-- ==================== CONFIGURAÇÃO DE CORES ====================
 local Colors = {
     Background = Color3.fromRGB(19, 17, 28),
     Card = Color3.fromRGB(26, 23, 38),
-    Accent = Color3.fromRGB(168, 85, 247), 
+    Accent = Color3.fromRGB(168, 85, 247),
     AccentDim = Color3.fromRGB(107, 33, 168),
     Text = Color3.fromRGB(243, 244, 246),
     TextMuted = Color3.fromRGB(156, 163, 175),
-    Border = Color3.fromRGB(39, 35, 56)
+    Border = Color3.fromRGB(39, 35, 56),
+    WaypointSet = Color3.fromRGB(80, 220, 150),
+    WaypointUnset = Color3.fromRGB(156, 163, 175)
 }
 
 -- CONFIGURAÇÕES DO ESP
@@ -160,7 +150,7 @@ local ESP_COLORS = {
     MD = Color3.fromRGB(255, 140, 255)
 }
 
--- ==================== CORE GUI NATIVA ====================
+-- ==================== CORE GUI ====================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ClaraFunctionsUI"
 ScreenGui.Parent = game.CoreGui
@@ -185,7 +175,6 @@ MainStroke.Color = Colors.Border
 MainStroke.Thickness = 1
 MainStroke.Parent = MainFrame
 
--- Header
 local Header = Instance.new("Frame")
 Header.Size = UDim2.new(1, 0, 0, 50)
 Header.BackgroundTransparency = 1
@@ -203,7 +192,6 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.RichText = true
 Title.Parent = Header
 
--- Linha Divisória
 local Devider = Instance.new("Frame")
 Devider.Size = UDim2.new(1, -30, 0, 1)
 Devider.Position = UDim2.new(0, 15, 0, 50)
@@ -211,7 +199,6 @@ Devider.BackgroundColor3 = Colors.Border
 Devider.BorderSizePixel = 0
 Devider.Parent = MainFrame
 
--- Container de Itens
 local Container = Instance.new("ScrollingFrame")
 Container.Size = UDim2.new(1, -30, 1, -110)
 Container.Position = UDim2.new(0, 15, 0, 65)
@@ -226,7 +213,6 @@ UIListLayout.Padding = UDim.new(0, 8)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = Container
 
--- Footer
 local Footer = Instance.new("TextLabel")
 Footer.Size = UDim2.new(1, -30, 0, 30)
 Footer.Position = UDim2.new(0, 15, 1, -35)
@@ -245,19 +231,21 @@ local clickTpEnabled = false
 local tpWalkEnabled = false
 local antiAfkEnabled = false
 local espEnabled = false
+local teleportBehindEnabled = false  -- [ALTERADO] agora é um toggle
+
+-- [NOVO] Sistema de Waypoint
+local waypointCFrame = nil
+local waypointEnabled = false  -- toggle pra ativar teleporte no waypoint via keybind
 
 local flySpeed = 50
 local tpWalkSpeed = 50
-local maxCameraZoom = 120 -- Padrão estendido confortável (Roblox limita a 128 por padrão)
 
--- Variáveis do Sistema de Alvo Integrado
 local playerList = {}
 local targetIdx = 1
 
 local bodyVelocity, bodyGyro = nil, nil
 local camera = workspace.CurrentCamera
 
--- Lista unificada de Keybinds mutáveis e fixas
 local Keys = {
     Fly = Enum.KeyCode.P,
     Noclip = Enum.KeyCode.L,
@@ -265,8 +253,45 @@ local Keys = {
     TpWalk = Enum.KeyCode.K,
     ESP = Enum.KeyCode.U,
     CycleTarget = Enum.KeyCode.RightShift,
-    TeleportTarget = Enum.KeyCode.H      
+    TeleportTarget = Enum.KeyCode.H,
+    Waypoint = Enum.KeyCode.G
 }
+
+-- ==================== SAVE / LOAD DE KEYBINDS ====================
+local KEYS_FILE = "clara_keys.json"
+
+local function saveKeys()
+    pcall(function()
+        local data = {}
+        for k, v in pairs(Keys) do
+            data[k] = v.Name  -- salva o nome da tecla (ex: "P", "L")
+        end
+        writefile(KEYS_FILE, HttpService:JSONEncode(data))
+    end)
+end
+
+local function loadKeys()
+    pcall(function()
+        if not isfile(KEYS_FILE) then return end
+        local raw = readfile(KEYS_FILE)
+        if not raw or raw == "" then return end
+        local data = HttpService:JSONDecode(raw)
+        for k, name in pairs(data) do
+            -- só carrega se a key existir na tabela e o KeyCode for válido
+            if Keys[k] ~= nil then
+                local ok, kc = pcall(function()
+                    return Enum.KeyCode[name]
+                end)
+                if ok and kc then
+                    Keys[k] = kc
+                end
+            end
+        end
+    end)
+end
+
+-- Carrega keybinds salvas ao iniciar
+loadKeys()
 
 local tracked = {}
 
@@ -278,14 +303,7 @@ local function getLocalCharacterData()
     return char, hrp, hum
 end
 
--- Monitoramento contínuo da distância da câmera
-RunService.RenderStepped:Connect(function()
-    if LocalPlayer and LocalPlayer.CameraMaxZoomDistance ~= maxCameraZoom then
-        LocalPlayer.CameraMaxZoomDistance = maxCameraZoom
-    end
-end)
-
--- ==================== LÓGICA DE ALVO E TELEPORTE INTERNA ====================
+-- ==================== LÓGICA DE ALVO ====================
 local function getPlayers()
     playerList = {}
     for _, p in ipairs(Players:GetPlayers()) do
@@ -304,53 +322,43 @@ local function getTarget()
     return playerList[targetIdx]
 end
 
-local updateTargetUIElement = nil 
+local updateTargetUIElement = nil
 
 local function cyclePlayer(dir)
     getPlayers()
-    if #playerList == 0 then 
+    if #playerList == 0 then
         targetIdx = 0
         if updateTargetUIElement then updateTargetUIElement("nenhum") end
-        return 
+        return
     end
-    
     targetIdx = targetIdx + dir
-    if targetIdx > #playerList then
-        targetIdx = 1
-    elseif targetIdx < 1 then
-        targetIdx = #playerList
-    end
-    
+    if targetIdx > #playerList then targetIdx = 1
+    elseif targetIdx < 1 then targetIdx = #playerList end
     local currentTarget = getTarget()
-    if updateTargetUIElement then 
-        updateTargetUIElement(currentTarget and currentTarget.Name or "nenhum") 
+    if updateTargetUIElement then
+        updateTargetUIElement(currentTarget and currentTarget.Name or "nenhum")
     end
 end
 
 local function teleportBehind()
     local t = getTarget()
     if not t then return end
-
     local tc = t.Character
     local _, myRoot, _ = getLocalCharacterData()
     if not (tc and tc:FindFirstChild("HumanoidRootPart") and myRoot) then return end
-
-    local root   = tc.HumanoidRootPart
+    local root = tc.HumanoidRootPart
     local behind = root.CFrame - root.CFrame.LookVector * 3
-
     myRoot.CFrame = behind
 end
 
--- ==================== LÓGICA DO ESP REFORMULADA E SEGURO ====================
+-- ==================== LÓGICA DO ESP ====================
 local function GetMD(player)
     local char = player.Character
     if not char then return "—" end
-    
     local data = tracked[player]
     if data and data.mdValue and data.mdValue.Parent then
         return math.floor(data.mdValue.Value)
     end
-    
     local success, result = pcall(function()
         local paths = {
             {"combat", "mode"}, {"combat", "Mode"}, {"Combat", "mode"}, {"Combat", "Mode"},
@@ -368,7 +376,6 @@ local function GetMD(player)
                 return math.floor(obj.Value)
             end
         end
-        
         for _, obj in ipairs(char:GetDescendants()) do
             if (obj:IsA("IntValue") or obj:IsA("NumberValue")) then
                 local nameLower = obj.Name:lower()
@@ -380,7 +387,6 @@ local function GetMD(player)
         end
         return "—"
     end)
-    
     return success and result or "—"
 end
 
@@ -397,10 +403,8 @@ end
 
 local function createESP(player)
     removeESP(player)
-
     local char = player.Character
     if not char then return end
-
     local r = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("Head")
     if not r then return end
 
@@ -483,25 +487,21 @@ end
 
 RunService.Heartbeat:Connect(function()
     local _, myRoot, _ = getLocalCharacterData()
-    
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             local char = plr.Character
             local data = tracked[plr]
-            
             if char and char.Parent then
                 if not data or not data.billboard or not data.billboard.Parent then
                     pcall(function() createESP(plr) end)
                     data = tracked[plr]
                 end
-                
                 if data then
                     local targetRoot = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("Head")
                     if myRoot and targetRoot then
                         local dist = (targetRoot.Position - myRoot.Position).Magnitude
                         data.distLbl.Text = string.format("Dist: %.0fm", dist)
                     end
-                    
                     local hum = char:FindFirstChildOfClass("Humanoid")
                     if hum then
                         local maxHp = hum.MaxHealth > 0 and hum.MaxHealth or 100
@@ -509,7 +509,6 @@ RunService.Heartbeat:Connect(function()
                         data.healthBar.Size = UDim2.new(percent, 0, 1, 0)
                         data.hpLbl.Text = string.format("HP: %d/%d", math.floor(hum.Health), math.floor(maxHp))
                     end
-                    
                     data.mdLbl.Text = "MD: " .. GetMD(plr)
                 end
             else
@@ -526,7 +525,6 @@ local function startFly()
     if flying then return end
     local _, myRoot, _ = getLocalCharacterData()
     if not myRoot then return end
-
     flying = true
     bodyVelocity = Instance.new("BodyVelocity")
     bodyGyro = Instance.new("BodyGyro")
@@ -535,15 +533,12 @@ local function startFly()
     bodyGyro.P = 9000
     bodyVelocity.Parent = myRoot
     bodyGyro.Parent = myRoot
-    
     RunService.Heartbeat:Connect(function()
         if not flying then return end
         local _, currentRoot, _ = getLocalCharacterData()
         if not currentRoot then return end
-        
         if bodyVelocity.Parent ~= currentRoot then bodyVelocity.Parent = currentRoot end
         if bodyGyro.Parent ~= currentRoot then bodyGyro.Parent = currentRoot end
-
         local cam = workspace.CurrentCamera
         local move = Vector3.new()
         if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
@@ -637,7 +632,7 @@ local function createRow(name, keyConfigName, hasKeybind, callback)
     statusIndicator.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
     statusIndicator.BorderSizePixel = 0
     statusIndicator.Parent = toggleBtn
-    
+
     local indCorner = Instance.new("UICorner")
     indCorner.CornerRadius = UDim.new(1, 0)
     indCorner.Parent = statusIndicator
@@ -663,7 +658,7 @@ local function createRow(name, keyConfigName, hasKeybind, callback)
         bindBtn.Size = UDim2.new(0.28, 0, 0.6, 0)
         bindBtn.Position = UDim2.new(0.7, -15, 0.2, 0)
         bindBtn.BackgroundColor3 = Colors.Background
-        bindBtn.Text = Keys[keyConfigName].Name
+        bindBtn.Text = Keys[keyConfigName] and Keys[keyConfigName].Name or "—"
         bindBtn.TextColor3 = Colors.Accent
         bindBtn.Font = Enum.Font.GothamBold
         bindBtn.TextSize = 12
@@ -672,7 +667,7 @@ local function createRow(name, keyConfigName, hasKeybind, callback)
         local bindCorner = Instance.new("UICorner")
         bindCorner.CornerRadius = UDim.new(0, 6)
         bindCorner.Parent = bindBtn
-        
+
         local bindStroke = Instance.new("UIStroke")
         bindStroke.Color = Colors.Border
         bindStroke.Thickness = 1
@@ -683,7 +678,6 @@ local function createRow(name, keyConfigName, hasKeybind, callback)
             isBinding = true
             bindBtn.Text = "..."
             bindBtn.TextColor3 = Colors.TextMuted
-            
             local connection
             connection = UIS.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -692,6 +686,7 @@ local function createRow(name, keyConfigName, hasKeybind, callback)
                     bindBtn.TextColor3 = Colors.Accent
                     isBinding = false
                     connection:Disconnect()
+                    saveKeys()  -- salva após trocar a tecla
                 end
             end)
         end)
@@ -807,6 +802,169 @@ local function createTargetManagerRow()
     end
 end
 
+-- ==================== [NOVO] ROW DO WAYPOINT ====================
+local updateWaypointStatusLabel = nil
+
+local function createWaypointRow()
+    -- Linha principal: toggle ativar/desativar + keybind
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -6, 0, 50)
+    row.BackgroundColor3 = Colors.Card
+    row.BorderSizePixel = 0
+    row.Parent = Container
+
+    local rowCorner = Instance.new("UICorner")
+    rowCorner.CornerRadius = UDim.new(0, 8)
+    rowCorner.Parent = row
+
+    local rowStroke = Instance.new("UIStroke")
+    rowStroke.Color = Colors.Border
+    rowStroke.Thickness = 1
+    rowStroke.Parent = row
+
+    -- Toggle de ativar teleporte ao waypoint
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(0.45, 0, 1, 0)
+    toggleBtn.BackgroundTransparency = 1
+    toggleBtn.Text = "  Waypoint TP"
+    toggleBtn.TextColor3 = Colors.TextMuted
+    toggleBtn.TextSize = 13
+    toggleBtn.Font = Enum.Font.GothamMedium
+    toggleBtn.TextXAlignment = Enum.TextXAlignment.Left
+    toggleBtn.Parent = row
+
+    local statusDot = Instance.new("Frame")
+    statusDot.Size = UDim2.new(0, 8, 0, 8)
+    statusDot.Position = UDim2.new(0.45, -14, 0.5, -4)
+    statusDot.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+    statusDot.BorderSizePixel = 0
+    statusDot.Parent = toggleBtn
+    local sdCorner = Instance.new("UICorner", statusDot); sdCorner.CornerRadius = UDim.new(1, 0)
+
+    -- Botão "Criar" (salva posição atual)
+    local setBtn = Instance.new("TextButton")
+    setBtn.Size = UDim2.new(0.22, 0, 0.6, 0)
+    setBtn.Position = UDim2.new(0.47, 0, 0.2, 0)
+    setBtn.BackgroundColor3 = Colors.AccentDim
+    setBtn.Text = "Criar"
+    setBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    setBtn.Font = Enum.Font.GothamBold
+    setBtn.TextSize = 12
+    setBtn.Parent = row
+    local setBtnCorner = Instance.new("UICorner", setBtn); setBtnCorner.CornerRadius = UDim.new(0, 6)
+
+    -- Botão de Keybind
+    local isBinding = false
+    local bindBtn = Instance.new("TextButton")
+    bindBtn.Size = UDim2.new(0.22, 0, 0.6, 0)
+    bindBtn.Position = UDim2.new(0.72, 0, 0.2, 0)
+    bindBtn.BackgroundColor3 = Colors.Background
+    bindBtn.Text = Keys.Waypoint.Name
+    bindBtn.TextColor3 = Colors.Accent
+    bindBtn.Font = Enum.Font.GothamBold
+    bindBtn.TextSize = 12
+    bindBtn.Parent = row
+    local bindBtnCorner = Instance.new("UICorner", bindBtn); bindBtnCorner.CornerRadius = UDim.new(0, 6)
+    local bindBtnStroke = Instance.new("UIStroke", bindBtn); bindBtnStroke.Color = Colors.Border; bindBtnStroke.Thickness = 1
+
+    -- Linha de status (mostra coordenadas do waypoint)
+    local statusRow = Instance.new("Frame")
+    statusRow.Size = UDim2.new(1, -6, 0, 36)
+    statusRow.BackgroundColor3 = Colors.Card
+    statusRow.BorderSizePixel = 0
+    statusRow.Parent = Container
+
+    local statusCorner = Instance.new("UICorner")
+    statusCorner.CornerRadius = UDim.new(0, 8)
+    statusCorner.Parent = statusRow
+
+    local statusStroke = Instance.new("UIStroke")
+    statusStroke.Color = Colors.Border
+    statusStroke.Thickness = 1
+    statusStroke.Parent = statusRow
+
+    local coordIcon = Instance.new("TextLabel")
+    coordIcon.Size = UDim2.new(0, 20, 1, 0)
+    coordIcon.Position = UDim2.new(0, 10, 0, 0)
+    coordIcon.BackgroundTransparency = 1
+    coordIcon.Text = "📍"
+    coordIcon.TextSize = 13
+    coordIcon.Font = Enum.Font.Gotham
+    coordIcon.Parent = statusRow
+
+    local coordLabel = Instance.new("TextLabel")
+    coordLabel.Size = UDim2.new(1, -36, 1, 0)
+    coordLabel.Position = UDim2.new(0, 32, 0, 0)
+    coordLabel.BackgroundTransparency = 1
+    coordLabel.Text = "Waypoint: não definido"
+    coordLabel.TextColor3 = Colors.WaypointUnset
+    coordLabel.Font = Enum.Font.Gotham
+    coordLabel.TextSize = 11
+    coordLabel.TextXAlignment = Enum.TextXAlignment.Left
+    coordLabel.Parent = statusRow
+
+    -- Atualiza label externamente (chamado ao criar waypoint)
+    updateWaypointStatusLabel = function(cf)
+        if cf then
+            local p = cf.Position
+            coordLabel.Text = string.format("Waypoint: X:%.0f Y:%.0f Z:%.0f", p.X, p.Y, p.Z)
+            coordLabel.TextColor3 = Colors.WaypointSet
+        else
+            coordLabel.Text = "Waypoint: não definido"
+            coordLabel.TextColor3 = Colors.WaypointUnset
+        end
+    end
+
+    -- Toggle ativar/desativar waypoint TP
+    toggleBtn.MouseButton1Click:Connect(function()
+        waypointEnabled = not waypointEnabled
+        if waypointEnabled then
+            toggleBtn.TextColor3 = Colors.Text
+            statusDot.BackgroundColor3 = Color3.fromRGB(34, 197, 94)
+            rowStroke.Color = Colors.AccentDim
+        else
+            toggleBtn.TextColor3 = Colors.TextMuted
+            statusDot.BackgroundColor3 = Color3.fromRGB(239, 68, 68)
+            rowStroke.Color = Colors.Border
+        end
+    end)
+
+    -- Salvar waypoint na posição atual
+    setBtn.MouseButton1Click:Connect(function()
+        local _, myRoot, _ = getLocalCharacterData()
+        if myRoot then
+            waypointCFrame = myRoot.CFrame
+            updateWaypointStatusLabel(waypointCFrame)
+            -- Feedback visual no botão
+            setBtn.Text = "✓ Salvo"
+            setBtn.BackgroundColor3 = Colors.WaypointSet
+            task.delay(1.5, function()
+                setBtn.Text = "Criar"
+                setBtn.BackgroundColor3 = Colors.AccentDim
+            end)
+        end
+    end)
+
+    -- Rebind keybind do waypoint
+    bindBtn.MouseButton1Click:Connect(function()
+        if isBinding then return end
+        isBinding = true
+        bindBtn.Text = "..."
+        bindBtn.TextColor3 = Colors.TextMuted
+        local connection
+        connection = UIS.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                Keys.Waypoint = input.KeyCode
+                bindBtn.Text = input.KeyCode.Name
+                bindBtn.TextColor3 = Colors.Accent
+                isBinding = false
+                connection:Disconnect()
+                saveKeys()  -- salva após trocar a tecla do waypoint
+            end
+        end)
+    end)
+end
+
 -- ==================== CONSTRUÇÃO DA UI ====================
 local flyRow = createRow("Fly Mode", "Fly", true, function(state)
     if state then startFly() else stopFly() end
@@ -847,8 +1005,9 @@ local cycleTargetRow = createRow("Mudar Alvo (Shift Dir)", "CycleTarget", true, 
     cyclePlayer(1)
 end)
 
-local teleportTargetRow = createRow("Teleportar Atrás (H)", "TeleportTarget", true, function()
-    teleportBehind()
+-- [ALTERADO] Teleportar Atrás agora é um TOGGLE no hub (ativa/desativa)
+local teleportBehindRow = createRow("Teleportar Atrás", "TeleportTarget", true, function(state)
+    teleportBehindEnabled = state
 end)
 
 local clickTpRow = createRow("Click TP (Ctrl + Clique)", "ClickTp", false, function(state)
@@ -859,19 +1018,13 @@ local antiAfkRow = createRow("Anti-AFK (Desconexão)", "AntiAfk", false, functio
     antiAfkEnabled = state
 end)
 
--- NOVO: Modificado de FOV para Distância Máxima do Zoom da Câmera (Sem distorcer a imagem)
-createValueInputRow("Distância Câmera (Zoom)", maxCameraZoom, function(value)
-    if value then 
-        maxCameraZoom = math.clamp(value, 10, 500) -- Limites seguros de zoom
-        if LocalPlayer then LocalPlayer.CameraMaxZoomDistance = maxCameraZoom end
-    end
-    return maxCameraZoom
-end)
+-- [NOVO] Sistema de Waypoint
+createWaypointRow()
 
--- ==================== SENSOR DE ENTRADA CONFIGURADO ====================
+-- ==================== SENSOR DE ENTRADA ====================
 UIS.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end 
-    
+    if gameProcessed then return end
+
     if input.KeyCode == Keys.Fly then
         flyRow.Trigger()
     elseif input.KeyCode == Keys.TpWalk then
@@ -885,7 +1038,18 @@ UIS.InputBegan:Connect(function(input, gameProcessed)
     elseif input.KeyCode == Keys.CycleTarget then
         cyclePlayer(1)
     elseif input.KeyCode == Keys.TeleportTarget then
-        teleportBehind()
+        -- [ALTERADO] Só teleporta atrás se o toggle estiver ativo
+        if teleportBehindEnabled then
+            teleportBehind()
+        end
+    elseif input.KeyCode == Keys.Waypoint then
+        -- [NOVO] Teleporta para o waypoint salvo (se toggle ativo e waypoint existir)
+        if waypointEnabled and waypointCFrame then
+            local _, myRoot, _ = getLocalCharacterData()
+            if myRoot then
+                myRoot.CFrame = waypointCFrame
+            end
+        end
     elseif input.KeyCode == Enum.KeyCode.F8 then
         MainFrame.Visible = not MainFrame.Visible
     end
@@ -912,6 +1076,6 @@ end)
 
 getPlayers()
 local initialTarget = getTarget()
-if updateTargetUIElement then 
-    updateTargetUIElement(initialTarget and initialTarget.Name or "nenhum") 
+if updateTargetUIElement then
+    updateTargetUIElement(initialTarget and initialTarget.Name or "nenhum")
 end
